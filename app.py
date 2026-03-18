@@ -1,1 +1,1 @@
-from dashboard.app import *  # noqa: F401,F403
+from dashboard.live_app import *  # noqa: F401,F403
