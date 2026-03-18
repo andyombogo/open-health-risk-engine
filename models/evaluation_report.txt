@@ -1,0 +1,10 @@
+Random Forest — Classification Report (Test Set)
+==================================================
+               precision    recall  f1-score   support
+
+Not depressed       0.95      0.81      0.87      1491
+    Depressed       0.23      0.56      0.33       153
+
+     accuracy                           0.79      1644
+    macro avg       0.59      0.69      0.60      1644
+ weighted avg       0.88      0.79      0.82      1644
