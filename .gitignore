@@ -53,4 +53,5 @@ pytest-cache-files-*/
 
 # Local temp
 .tmp/
+.hfspace/
 {data,notebooks,src,explainability,dashboard,tests,.github/

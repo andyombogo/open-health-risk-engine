@@ -6,7 +6,7 @@ colorTo: green
 sdk: docker
 app_port: 8501
 pinned: false
-short_description: Explainable mental health risk demo built with NHANES survey data, scikit-learn, SHAP, and Streamlit.
+short_description: Explainable NHANES mental health risk demo in Streamlit.
 ---
 
 # Open Health Risk Engine
