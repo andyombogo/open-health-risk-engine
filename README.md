@@ -89,6 +89,7 @@ py -3 -m pip --python .\.venv\Scripts\python.exe install -r requirements.txt
 
 - GitHub repository URL: https://github.com/andyombogo/open-health-risk-engine
 - Hugging Face Space URL: https://huggingface.co/spaces/andyombogo/open-health-risk-engine
+- Fastest live app URL: https://andyombogo-open-health-risk-engine.hf.space
 - The app is packaged for Hugging Face Spaces using the `docker` SDK because Hugging Face deprecated Streamlit as the default built-in SDK in 2025.
 
 ## Important Disclaimer

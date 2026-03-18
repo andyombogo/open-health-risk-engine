@@ -5,10 +5,11 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PROJECT_REPO_URL=https://github.com/andyombogo/open-health-risk-engine
+ENV STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
 
-COPY requirements.txt .
+COPY runtime_requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+    && pip install --no-cache-dir -r runtime_requirements.txt
 
 COPY . .
 

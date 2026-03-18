@@ -15,7 +15,7 @@ REPO_URL = os.getenv("PROJECT_REPO_URL", "").strip()
 
 st.set_page_config(
     page_title="Open Health Risk Engine",
-    page_icon="🧠",
+    page_icon="OH",
     layout="wide",
     initial_sidebar_state="expanded",
 )
