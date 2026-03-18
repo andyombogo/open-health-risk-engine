@@ -4,6 +4,7 @@ WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV PROJECT_REPO_URL=https://github.com/andyombogo/open-health-risk-engine
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip \

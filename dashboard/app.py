@@ -323,7 +323,7 @@ st.divider()
 st.markdown("""
 <div style="text-align:center; color:#9ca3af; font-size:0.8rem;">
     Open Health Risk Engine · Built with NHANES data, scikit-learn, and SHAP · 
-    <a href="https://github.com/YOUR_USERNAME/open-health-risk-engine" 
+    <a href="https://github.com/andyombogo/open-health-risk-engine" 
        style="color:#6b7280">GitHub</a> · MIT License · Research use only
 </div>
 """, unsafe_allow_html=True)

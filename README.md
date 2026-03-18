@@ -87,8 +87,8 @@ py -3 -m pip --python .\.venv\Scripts\python.exe install -r requirements.txt
 
 ## Deployment Notes
 
-- GitHub repository URL: add after push
-- Hugging Face Space URL: add after deployment
+- GitHub repository URL: https://github.com/andyombogo/open-health-risk-engine
+- Hugging Face Space URL: https://huggingface.co/spaces/andyombogo/open-health-risk-engine
 - The app is packaged for Hugging Face Spaces using the `docker` SDK because Hugging Face deprecated Streamlit as the default built-in SDK in 2025.
 
 ## Important Disclaimer
