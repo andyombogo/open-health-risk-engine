@@ -140,77 +140,82 @@ inputs = {
     "race_eth": 3,
 }
 
-col_score, col_factors, col_context = st.columns([1, 1, 1])
+if predictor is None:
+    st.warning("Model not loaded. Run `python src/train_model.py` first.")
+    risk_score = 0.0
+    risk_label = "-"
+    risk_color = "gray"
+    phq9_est = 0.0
+    top_factors = []
+else:
+    result = predictor.predict(inputs)
+    risk_score = result["risk_score"]
+    risk_label = result["risk_label"]
+    risk_color = result["risk_color"]
+    phq9_est = result["phq9_estimate"]
+    top_factors = result["top_factors"]
 
-with col_score:
-    st.subheader("Risk Score")
+color_map = {
+    "green": "#059669",
+    "blue": "#2563EB",
+    "orange": "#D97706",
+    "red": "#DC2626",
+    "darkred": "#7F1D1D",
+    "gray": "#6B7280",
+}
+hex_color = color_map.get(risk_color, "#6B7280")
 
-    if predictor is None:
-        st.warning("Model not loaded. Run `python src/train_model.py` first.")
-        risk_score = 0.0
-        risk_label = "-"
-        risk_color = "gray"
-        phq9_est = 0.0
-        top_factors = []
-    else:
-        result = predictor.predict(inputs)
-        risk_score = result["risk_score"]
-        risk_label = result["risk_label"]
-        risk_color = result["risk_color"]
-        phq9_est = result["phq9_estimate"]
-        top_factors = result["top_factors"]
-
-    color_map = {
-        "green": "#059669",
-        "blue": "#2563EB",
-        "orange": "#D97706",
-        "red": "#DC2626",
-        "darkred": "#7F1D1D",
-        "gray": "#6B7280",
-    }
-    hex_color = color_map.get(risk_color, "#6B7280")
-
-    st.markdown(
-        f"""
-    <div style="background:{hex_color}15; border: 2px solid {hex_color};
-                border-radius:12px; padding:1.5rem; text-align:center;">
-        <div style="font-size:3rem; font-weight:700; color:{hex_color}">
-            {risk_score:.0%}
-        </div>
-        <div style="font-size:1.1rem; font-weight:600; color:{hex_color}; margin-top:0.25rem">
-            {risk_label}
-        </div>
-        <div style="font-size:0.8rem; color:#6b7280; margin-top:0.5rem">
-            Estimated PHQ-9: {phq9_est}
-        </div>
+st.subheader("Risk Score")
+st.markdown(
+    f"""
+<div style="background:{hex_color}15; border: 2px solid {hex_color};
+            border-radius:12px; padding:1.5rem; text-align:center;">
+    <div style="font-size:3rem; font-weight:700; color:{hex_color}">
+        {risk_score:.0%}
     </div>
-    """,
-        unsafe_allow_html=True,
-    )
+    <div style="font-size:1.1rem; font-weight:600; color:{hex_color}; margin-top:0.25rem">
+        {risk_label}
+    </div>
+    <div style="font-size:0.8rem; color:#6b7280; margin-top:0.5rem">
+        Estimated PHQ-9: {phq9_est}
+    </div>
+</div>
+""",
+    unsafe_allow_html=True,
+)
 
-    st.progress(risk_score)
-    who_met = 600
-    activity_pct = min(met_min_week / who_met, 1.0)
-    st.markdown(
-        "<div class='metric-label'>Physical activity vs. WHO recommendation</div>",
-        unsafe_allow_html=True,
-    )
-    st.progress(activity_pct)
-    st.caption(
-        f"{'Meets' if met_min_week >= who_met else 'Below'} WHO guidelines "
-        f"({met_min_week} / {who_met} MET-min/week)"
-    )
+st.progress(risk_score)
 
-    sleep_ok = 7 <= sleep_hours <= 9
-    st.caption(
-        f"{'Optimal' if sleep_ok else 'Suboptimal'} sleep: {sleep_hours} hrs/night "
-        f"(recommended: 7-9 hrs)"
-    )
+summary_col1, summary_col2 = st.columns(2)
+with summary_col1:
+    st.metric("Weekly Activity", f"{met_min_week} MET-min")
+    st.metric("Sleep", f"{sleep_hours:.1f} hrs/night")
+with summary_col2:
+    st.metric("BMI", f"{bmi:.1f}")
+    st.metric("Drinks / Week", str(drinks_per_week))
 
-with col_factors:
-    st.subheader("Key Risk Factors")
+who_met = 600
+activity_pct = min(met_min_week / who_met, 1.0)
+st.markdown(
+    "<div class='metric-label'>Physical activity vs. WHO recommendation</div>",
+    unsafe_allow_html=True,
+)
+st.progress(activity_pct)
+st.caption(
+    f"{'Meets' if met_min_week >= who_met else 'Below'} WHO guidelines "
+    f"({met_min_week} / {who_met} MET-min/week)"
+)
+
+sleep_ok = 7 <= sleep_hours <= 9
+st.caption(
+    f"{'Optimal' if sleep_ok else 'Suboptimal'} sleep: {sleep_hours} hrs/night "
+    f"(recommended: 7-9 hrs)"
+)
+
+tab_factors, tab_context, tab_about = st.tabs(["Risk Drivers", "Population Context", "About"])
+
+with tab_factors:
     st.caption("Top predictors from the model for this individual")
-
     if top_factors:
         factor_labels = {
             "inactive": "No physical activity",
@@ -238,26 +243,23 @@ with col_factors:
 
             st.markdown(
                 f"""
-            <div style="margin-bottom: 0.75rem;">
-                <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
-                    <span>{label}</span>
-                    <span style="color:#6b7280">importance: {imp:.3f}</span>
-                </div>
-                <div style="background:#f3f4f6; border-radius:4px; height:8px; margin-top:4px;">
-                    <div style="background:{bar_color}; width:{bar_width}%;
-                                height:8px; border-radius:4px;"></div>
-                </div>
+        <div style="margin-bottom: 0.75rem;">
+            <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+                <span>{label}</span>
+                <span style="color:#6b7280">importance: {imp:.3f}</span>
             </div>
-            """,
+            <div style="background:#f3f4f6; border-radius:4px; height:8px; margin-top:4px;">
+                <div style="background:{bar_color}; width:{bar_width}%;
+                            height:8px; border-radius:4px;"></div>
+            </div>
+        </div>
+        """,
                 unsafe_allow_html=True,
             )
     else:
         st.info("Train the model to see risk factors.")
 
-with col_context:
-    st.subheader("Population Context")
-    st.caption("How this profile compares to the NHANES population")
-
+with tab_context:
     context_data = {
         "Factor": ["Age", "BMI", "Activity", "Sleep", "Drinks/week", "Income ratio"],
         "Your value": [
@@ -279,7 +281,6 @@ with col_context:
     }
     st.dataframe(pd.DataFrame(context_data), use_container_width=True, hide_index=True)
 
-    st.markdown("---")
     st.markdown("**PHQ-9 Severity Scale**")
     severity_data = {
         "Score": ["0-4", "5-9", "10-14", "15-19", "20-27"],
@@ -287,15 +288,15 @@ with col_context:
     }
     st.dataframe(pd.DataFrame(severity_data), use_container_width=True, hide_index=True)
 
-    st.markdown("---")
+with tab_about:
     st.markdown(
         """
-    **About this model**
-    - Dataset: NHANES 2017-March 2020 pre-pandemic
-    - Algorithm: Random Forest (300 trees)
-    - Validation: 5-fold stratified CV
-    - Explainability: SHAP values
-    """
+**About this model**
+- Dataset: NHANES 2017-March 2020 pre-pandemic
+- Algorithm: Random Forest (300 trees)
+- Validation: 5-fold stratified CV
+- Explainability: SHAP values
+"""
     )
 
 st.divider()
