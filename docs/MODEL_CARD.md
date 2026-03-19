@@ -102,14 +102,23 @@ Current deployed model performance from the repo evaluation artifacts:
 See [VALIDATION_REPORT.md](VALIDATION_REPORT.md) for model comparison and
 interpretation.
 
+Additional validation artifacts now tracked in the repo:
+
+- `models/calibration_table.csv`
+- `models/threshold_metrics.csv`
+- `models/subgroup_metrics.csv`
+- `figures/calibration_curve_random_forest.png`
+- `figures/precision_recall_curve_random_forest.png`
+- `figures/threshold_tradeoffs_random_forest.png`
+
 ## Known Limitations
 
 - This is a public-survey model, not a clinical prediction model validated for care delivery.
 - Positive-class precision is currently low, so false positives are expected.
-- Calibration analysis and threshold tuning are not yet documented in the repo.
-- Subgroup performance evaluation is not yet documented.
+- Calibration and threshold analysis are now documented for the internal held-out test split, but external calibration is not yet available.
+- Subgroup performance evaluation is now documented for sex, age band, poverty band, and race on the internal held-out test split only.
 - External validation on a second dataset is not yet documented.
-- The public calculator currently does not expose race/ethnicity input. The live app passes `race_eth = 3` internally, so public demo scores should be interpreted as approximate demo outputs rather than fully personalized estimates on that dimension.
+- The public calculator now exposes broad NHANES race/ethnicity categories, but these are demographic proxy variables rather than causal explanations.
 - The app converts probability to a PHQ-9-style estimate with a simple linear scaling for UI communication only. That value should not be interpreted as a clinically validated PHQ-9 prediction.
 
 ## Ethical And Safe Use Notes

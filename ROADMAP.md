@@ -41,8 +41,8 @@ it should:
 research tracks.
 
 - [x] Add a model card covering intended use, limitations, metrics, and the non-clinical disclaimer
-- [ ] Add calibration, threshold tuning, and precision-recall analysis for the deployed model
-- [ ] Add subgroup evaluation by sex, age band, and poverty band
+- [x] Add calibration, threshold tuning, and precision-recall analysis for the deployed model
+- [x] Add subgroup evaluation by sex, age band, and poverty band
 - [ ] Add a short architecture diagram and one demo GIF or screenshot walkthrough to README
 - [x] Add example user scenarios with expected outputs
 - [x] Add `LICENSE` and `CONTRIBUTING.md`

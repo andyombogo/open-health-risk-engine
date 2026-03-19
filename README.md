@@ -58,6 +58,8 @@ The current trained demo model uses **NHANES 2017-March 2020 pre-pandemic data**
 
 ![SHAP Summary](figures/shap_summary.png)
 
+![Calibration Curve](figures/calibration_curve_random_forest.png)
+
 ## Project Structure
 
 ```text
@@ -77,6 +79,7 @@ open-health-risk-engine/
 |   |-- data_cleaning.py
 |   |-- feature_engineering.py
 |   |-- train_model.py
+|   |-- validation_analysis.py
 |   `-- predict_risk.py
 |-- tests/
 |   |-- test_pipeline.py
@@ -100,6 +103,7 @@ py -3 -m pip --python .\.venv\Scripts\python.exe install -r requirements.txt
 .\.venv\Scripts\python.exe src\data_cleaning.py
 .\.venv\Scripts\python.exe src\feature_engineering.py
 .\.venv\Scripts\python.exe src\train_model.py
+.\.venv\Scripts\python.exe src\validation_analysis.py
 .\.venv\Scripts\python.exe explainability\shap_analysis.py
 ```
 

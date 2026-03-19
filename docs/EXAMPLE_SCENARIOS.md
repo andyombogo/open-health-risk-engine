@@ -104,5 +104,5 @@ Top factors returned:
 ## Notes
 
 - These outputs can change after retraining or threshold changes.
-- The public app currently fixes `race_eth = 3`, so live outputs may differ from local examples that use another value.
+- The public app now exposes the same broad NHANES race and ethnicity categories used in training, so live outputs can vary when that input changes.
 - `PHQ-9 estimate` is a UI heuristic and not a clinically validated predicted PHQ-9 score.

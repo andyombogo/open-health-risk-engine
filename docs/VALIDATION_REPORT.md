@@ -63,7 +63,45 @@ Important observations:
 - The problem is imbalanced, with the positive class representing a minority of cases.
 - Random Forest test precision is `0.2331`, which means many positive predictions will be false positives.
 - Random Forest test recall is `0.5621`, so a substantial share of true positives is still missed.
-- Random Forest test Brier score is `0.1559`, but calibration plots and threshold analysis are not yet documented.
+- Random Forest test Brier score is `0.1559`.
+
+## Calibration Summary
+
+Internal calibration analysis is now saved in `models/calibration_table.csv` and
+`figures/calibration_curve_random_forest.png`.
+
+Key observation:
+
+- The model overpredicts risk across every calibration bin in the held-out test set.
+
+Examples from the calibration table:
+
+- In the `0.5-0.6` probability bin, the mean predicted probability is `0.5441` but the observed positive rate is `0.1691`.
+- In the `0.6-0.7` probability bin, the mean predicted probability is `0.6489` but the observed positive rate is `0.2324`.
+- In the `0.7-0.8` probability bin, the mean predicted probability is `0.7360` but the observed positive rate is `0.3452`.
+
+Interpretation:
+
+- The ranking signal is useful enough for a portfolio demo, but the raw probability values are not well calibrated and should not be interpreted as clinically reliable absolute risk.
+
+## Threshold And Precision-Recall Summary
+
+Threshold analysis is saved in `models/threshold_metrics.csv` and
+`figures/threshold_tradeoffs_random_forest.png`.
+The precision-recall curve is saved in
+`figures/precision_recall_curve_random_forest.png`.
+
+Key observations:
+
+- Average precision on the held-out test set is `0.2434`.
+- At the default `0.50` threshold, precision is `0.2331`, recall is `0.5621`, and F1 is `0.3295`.
+- In the scanned threshold grid, the highest F1 is `0.3333` at threshold `0.65`, with precision `0.3333` and recall `0.3333`.
+- Threshold `0.55` is close behind with F1 `0.3311`, precision `0.2535`, and recall `0.4771`.
+
+Interpretation:
+
+- A stricter threshold improves precision somewhat, but it quickly reduces recall.
+- There is no single threshold that resolves the current tradeoff; calibration and intended use still matter.
 
 ## Classification Report Snapshot
 
@@ -73,27 +111,47 @@ For the deployed Random Forest on the test set:
 - `Depressed`: precision `0.23`, recall `0.56`, F1 `0.33`, support `153`
 - Overall accuracy: `0.79`
 
-## Major Validation Gaps
+## Subgroup Evaluation Summary
 
-- No documented calibration curve or calibration table
-- No threshold tuning study
-- No subgroup performance analysis by sex, age, or poverty band
+Subgroup evaluation is saved in `models/subgroup_metrics.csv`.
+The current analysis covers sex, age band, poverty band, and race on the
+held-out test split.
+
+Selected findings:
+
+- By sex:
+  - Female: AUC `0.7423`, precision `0.2599`, recall `0.6020`, F1 `0.3631`
+  - Male: AUC `0.7615`, precision `0.1901`, recall `0.4909`, F1 `0.2741`
+- By age band:
+  - `50-64` has the highest recall at `0.7209` and the highest F1 at `0.3713`
+  - `65+` has the lowest AUC among the age bands at `0.7208`
+- By poverty band:
+  - `<1.0` has the highest recall at `0.7429`
+  - `2.0+` has the highest AUC at `0.7848`
+- By race:
+  - Non-Hispanic White: precision `0.3000`, recall `0.5909`, F1 `0.3980`
+  - Non-Hispanic Asian: AUC `0.8214`, but prevalence is low and recall is `0.2000`
+  - Other / Multiracial: F1 `0.4103`, but sample size is only `76`
+
+Interpretation:
+
+- The subgroup results are useful for transparency, but they are not fairness guarantees.
+- Group sizes and prevalence vary substantially, so some subgroup metrics are less stable than others.
+
+## Remaining Validation Gaps
+
 - No external validation dataset
 - No error analysis report for false positives and false negatives
-
-## Product-Relevant Limitation
-
-The public calculator currently does not expose race/ethnicity in the UI and
-passes `race_eth = 3` internally. That means the deployed calculator is not
-fully personalizing that dimension today and should be framed accordingly.
+- No post-hoc probability calibration method has been applied yet
+- No confidence intervals are reported for subgroup metrics
 
 ## Recommended Next Validation Tasks
 
 1. Add calibration plots and expected calibration error style summaries.
-2. Compare multiple operating thresholds, not only the default classifier threshold.
-3. Add subgroup evaluation by sex, age band, and poverty band.
-4. Add a false-positive and false-negative review section with example patterns.
-5. Reassess the deployed model choice after thresholding and calibration.
+2. Add a false-positive and false-negative review section with example patterns.
+3. Reassess the deployed model choice after thresholding and calibration.
+4. Add confidence intervals or bootstrap uncertainty for subgroup metrics.
+5. Validate on a second dataset if feasible.
 
 ## Reproducibility
 

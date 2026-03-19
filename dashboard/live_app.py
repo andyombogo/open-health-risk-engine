@@ -162,7 +162,7 @@ st.markdown(
     }
     .input-highlight-grid {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 0.8rem;
         margin: 1rem 0 1.15rem 0;
     }
@@ -184,9 +184,10 @@ st.markdown(
     }
     .input-highlight-value {
         color: #0f172a;
-        font-size: 1.2rem;
+        font-size: clamp(0.95rem, 1.4vw, 1.2rem);
         font-weight: 800;
         margin-top: 0.28rem;
+        line-height: 1.25;
     }
     .score-shell {
         background:
@@ -239,6 +240,11 @@ st.markdown(
         color: #475569;
         font-size: 0.88rem;
     }
+    @media (max-width: 1200px) {
+        .input-highlight-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
     @media (max-width: 900px) {
         .input-highlight-grid {
             grid-template-columns: 1fr;
@@ -270,6 +276,15 @@ education_map = {
     "College graduate or above": 5,
 }
 
+race_eth_map = {
+    "Mexican American": 1,
+    "Other Hispanic": 2,
+    "Non-Hispanic White": 3,
+    "Non-Hispanic Black": 4,
+    "Non-Hispanic Asian": 6,
+    "Other / Multiracial": 7,
+}
+
 
 def format_factor(feature_name: str) -> str:
     factor_labels = {
@@ -286,6 +301,11 @@ def format_factor(feature_name: str) -> str:
         "age": "Age",
         "poverty_ratio": "Income level",
         "education": "Education level",
+        "race_mexican_american": "Mexican American",
+        "race_other_hispanic": "Other Hispanic",
+        "race_nh_black": "Non-Hispanic Black",
+        "race_nh_asian": "Non-Hispanic Asian",
+        "race_other": "Other / multiracial",
     }
     return factor_labels.get(feature_name, feature_name.replace("_", " ").title())
 
@@ -374,6 +394,13 @@ def render_calculator():
                 index=3,
                 key="calc_education",
             )
+            race_eth = st.selectbox(
+                "Race / ethnicity",
+                list(race_eth_map.keys()),
+                index=2,
+                key="calc_race_eth",
+                help="Broad NHANES demographic categories used during training.",
+            )
             sleep_hours = st.slider(
                 "Sleep (hours/night)",
                 3.0,
@@ -419,6 +446,10 @@ def render_calculator():
         <div class="input-highlight-label">BMI</div>
         <div class="input-highlight-value">{bmi:.1f}</div>
     </div>
+    <div class="input-highlight">
+        <div class="input-highlight-label">Race / Ethnicity</div>
+        <div class="input-highlight-value">{race_eth}</div>
+    </div>
 </div>
 """,
             unsafe_allow_html=True,
@@ -435,7 +466,7 @@ def render_calculator():
             "bmi": bmi,
             "drinks_per_week": drinks_per_week,
             "education": education_map[education],
-            "race_eth": 3,
+            "race_eth": race_eth_map[race_eth],
         }
         result = score_inputs(inputs)
 

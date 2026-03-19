@@ -103,8 +103,18 @@ education_map = {
     "Some college": 4,
     "College graduate or above": 5,
 }
+races = {
+    "Mexican American": 1,
+    "Other Hispanic": 2,
+    "Non-Hispanic White": 3,
+    "Non-Hispanic Black": 4,
+    "Non-Hispanic Asian": 6,
+    "Other / Multiracial": 7,
+}
 education = st.sidebar.selectbox("Education", list(education_map.keys()), index=3)
 education_val = education_map[education]
+race_label = st.sidebar.selectbox("Race / Ethnicity", list(races.keys()), index=2)
+race_eth = races[race_label]
 
 poverty_ratio = st.sidebar.slider(
     "Poverty-Income Ratio",
@@ -163,7 +173,7 @@ inputs = {
     "bmi": bmi,
     "drinks_per_week": drinks_per_week,
     "education": education_val,
-    "race_eth": 3,  # Default; could add to sidebar
+    "race_eth": race_eth,
 }
 
 col_score, col_factors, col_context = st.columns([1, 1, 1])
@@ -256,6 +266,11 @@ with col_factors:
             "age": "Age",
             "poverty_ratio": "Income level",
             "education": "Education level",
+            "race_mexican_american": "Mexican American",
+            "race_other_hispanic": "Other Hispanic",
+            "race_nh_black": "Non-Hispanic Black",
+            "race_nh_asian": "Non-Hispanic Asian",
+            "race_other": "Other / multiracial",
         }
 
         for i, factor in enumerate(top_factors):
