@@ -1,0 +1,21 @@
+comparison,feature,feature_label,left_group_mean,right_group_mean,delta_left_minus_right
+FP_vs_TN,age,Age,50.2297,48.207,2.0227
+FP_vs_TN,sex_female,Female share,0.5936,0.4578,0.1359
+FP_vs_TN,poverty_ratio,Poverty ratio,1.8477,2.872,-1.0243
+FP_vs_TN,met_min_week,Weekly activity (MET-min),504.8269,4315.7964,-3810.9695
+FP_vs_TN,sleep_hours_avg,Sleep hours,7.5468,7.7525,-0.2057
+FP_vs_TN,sleep_trouble,Sleep trouble rate,0.8339,0.1068,0.7271
+FP_vs_TN,bmi,BMI,32.9653,28.9088,4.0565
+FP_vs_TN,education,Education,3.3004,3.7467,-0.4463
+FP_vs_TN,phq9_score,PHQ-9 score,3.5972,1.8129,1.7843
+FP_vs_TN,y_prob,Predicted probability,0.6264,0.2683,0.3581
+FN_vs_TP,age,Age,48.1194,49.8721,-1.7527
+FN_vs_TP,sex_female,Female share,0.5821,0.686,-0.104
+FN_vs_TP,poverty_ratio,Poverty ratio,2.9606,1.8362,1.1244
+FN_vs_TP,met_min_week,Weekly activity (MET-min),4316.2313,809.6279,3506.6034
+FN_vs_TP,sleep_hours_avg,Sleep hours,7.6292,7.7137,-0.0844
+FN_vs_TP,sleep_trouble,Sleep trouble rate,0.3582,0.9767,-0.6185
+FN_vs_TP,bmi,BMI,30.0579,31.8482,-1.7902
+FN_vs_TP,education,Education,3.597,3.1628,0.4342
+FN_vs_TP,phq9_score,PHQ-9 score,13.1493,13.5116,-0.3624
+FN_vs_TP,y_prob,Predicted probability,0.334,0.6574,-0.3234

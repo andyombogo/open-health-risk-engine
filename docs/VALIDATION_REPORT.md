@@ -138,20 +138,30 @@ Interpretation:
 - The subgroup results are useful for transparency, but they are not fairness guarantees.
 - Group sizes and prevalence vary substantially, so some subgroup metrics are less stable than others.
 
+## Error Analysis Summary
+
+Detailed false-positive and false-negative review is now documented in
+[ERROR_ANALYSIS.md](ERROR_ANALYSIS.md).
+
+Headline findings from the held-out test split:
+
+- False positives are concentrated in profiles with low activity, high sleep trouble, higher BMI, and lower poverty ratio compared with true negatives.
+- False negatives are positive cases whose observed lifestyle pattern looks comparatively healthier than true positives.
+- Female participants show higher false positive rates, while male participants show higher false negative rates.
+- Below-poverty participants show higher false positive rates, while higher-income participants show higher false negative rates.
+
 ## Remaining Validation Gaps
 
 - No external validation dataset
-- No error analysis report for false positives and false negatives
 - No post-hoc probability calibration method has been applied yet
 - No confidence intervals are reported for subgroup metrics
 
 ## Recommended Next Validation Tasks
 
 1. Add calibration plots and expected calibration error style summaries.
-2. Add a false-positive and false-negative review section with example patterns.
-3. Reassess the deployed model choice after thresholding and calibration.
-4. Add confidence intervals or bootstrap uncertainty for subgroup metrics.
-5. Validate on a second dataset if feasible.
+2. Reassess the deployed model choice after thresholding and calibration.
+3. Add confidence intervals or bootstrap uncertainty for subgroup metrics.
+4. Validate on a second dataset if feasible.
 
 ## Reproducibility
 

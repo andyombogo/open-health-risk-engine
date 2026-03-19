@@ -129,6 +129,7 @@ Additional validation artifacts now tracked in the repo:
 
 ## Related Docs
 
+- [Error analysis](ERROR_ANALYSIS.md)
 - [Validation report](VALIDATION_REPORT.md)
 - [Example scenarios](EXAMPLE_SCENARIOS.md)
 - [Roadmap](../ROADMAP.md)

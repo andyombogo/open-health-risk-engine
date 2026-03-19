@@ -1,0 +1,16 @@
+subgroup_type,subgroup,n,actual_negative_n,actual_positive_n,false_positive_rate,false_negative_rate
+sex,Female,819,721,98,0.233,0.398
+sex,Male,825,770,55,0.1494,0.5091
+age_band,18-34,465,430,35,0.1395,0.5429
+age_band,35-49,365,325,40,0.2092,0.45
+age_band,50-64,430,387,43,0.2403,0.2791
+age_band,65+,384,349,35,0.1777,0.5143
+poverty_band,1.0-1.99,350,312,38,0.2564,0.3947
+poverty_band,2.0+,1013,933,80,0.1243,0.5375
+poverty_band,<1.0,281,246,35,0.3537,0.2571
+race,Mexican American,168,157,11,0.1847,0.2727
+race,Non-Hispanic Asian,206,196,10,0.0765,0.8
+race,Non-Hispanic Black,469,433,36,0.2194,0.5
+race,Non-Hispanic White,571,505,66,0.1802,0.4091
+race,Other / Multiracial,76,62,14,0.2742,0.4286
+race,Other Hispanic,154,138,16,0.2609,0.3125

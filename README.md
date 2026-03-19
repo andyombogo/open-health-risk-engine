@@ -48,6 +48,7 @@ The current trained demo model uses **NHANES 2017-March 2020 pre-pandemic data**
 - [Roadmap](ROADMAP.md)
 - [Model card](docs/MODEL_CARD.md)
 - [Validation report](docs/VALIDATION_REPORT.md)
+- [Error analysis](docs/ERROR_ANALYSIS.md)
 - [Example scenarios](docs/EXAMPLE_SCENARIOS.md)
 - [Contributing guide](CONTRIBUTING.md)
 - [License](LICENSE)
@@ -69,6 +70,7 @@ open-health-risk-engine/
 |   |-- app.py
 |   `-- live_app.py
 |-- docs/
+|   |-- ERROR_ANALYSIS.md
 |   |-- MODEL_CARD.md
 |   |-- VALIDATION_REPORT.md
 |   `-- EXAMPLE_SCENARIOS.md
@@ -79,6 +81,7 @@ open-health-risk-engine/
 |   |-- data_cleaning.py
 |   |-- feature_engineering.py
 |   |-- train_model.py
+|   |-- error_analysis.py
 |   |-- validation_analysis.py
 |   `-- predict_risk.py
 |-- tests/
@@ -104,6 +107,7 @@ py -3 -m pip --python .\.venv\Scripts\python.exe install -r requirements.txt
 .\.venv\Scripts\python.exe src\feature_engineering.py
 .\.venv\Scripts\python.exe src\train_model.py
 .\.venv\Scripts\python.exe src\validation_analysis.py
+.\.venv\Scripts\python.exe src\error_analysis.py
 .\.venv\Scripts\python.exe explainability\shap_analysis.py
 ```
 

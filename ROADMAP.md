@@ -72,7 +72,7 @@ engineers to integrate.
 integration claims.
 
 - [ ] External review of feature engineering decisions
-- [ ] Error analysis for false positives and false negatives
+- [x] Error analysis for false positives and false negatives
 - [ ] Fairness and subgroup performance review
 - [ ] External validation on a second dataset if feasible
 - [ ] Safe-use and unsafe-use guidance
