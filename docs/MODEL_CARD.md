@@ -133,3 +133,10 @@ Additional validation artifacts now tracked in the repo:
 - [Validation report](VALIDATION_REPORT.md)
 - [Example scenarios](EXAMPLE_SCENARIOS.md)
 - [Roadmap](../ROADMAP.md)
+
+## Calibration Note
+
+- Post-hoc calibration improves probability quality significantly (Brier from
+  `0.1559` to `0.0772` with sigmoid calibration).
+- The calibrated model favors a lower decision threshold (~`0.20`) if balancing
+  precision and recall on the current test split.

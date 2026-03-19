@@ -49,6 +49,7 @@ The current trained demo model uses **NHANES 2017-March 2020 pre-pandemic data**
 - [Model card](docs/MODEL_CARD.md)
 - [Validation report](docs/VALIDATION_REPORT.md)
 - [Error analysis](docs/ERROR_ANALYSIS.md)
+- Calibration artifacts: `models/calibrated_summary.csv`, `models/calibrated_threshold_metrics_sigmoid.csv`
 - [Example scenarios](docs/EXAMPLE_SCENARIOS.md)
 - [Contributing guide](CONTRIBUTING.md)
 - [License](LICENSE)

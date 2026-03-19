@@ -84,6 +84,31 @@ Interpretation:
 
 - The ranking signal is useful enough for a portfolio demo, but the raw probability values are not well calibrated and should not be interpreted as clinically reliable absolute risk.
 
+## Post-hoc Calibration And Threshold Reassessment
+
+We fit post-hoc calibrators (5-fold cross-validation) on the same train split:
+results are in `models/calibrated_summary.csv`, with threshold tables in
+`models/calibrated_threshold_metrics_sigmoid.csv` and
+`models/calibrated_threshold_metrics_isotonic.csv`.
+
+Summary (held-out test split):
+
+- Baseline model: AUC `0.7591`, AP `0.2434`, Brier `0.1559`
+- Sigmoid (Platt) calibrated: AUC `0.7561`, AP `0.2441`, Brier `0.0772`
+- Isotonic calibrated: AUC `0.7537`, AP `0.2447`, Brier `0.0775`
+
+Recommended operating point for the calibrated model:
+
+- Sigmoid calibration at threshold `0.20` gives precision `0.2884`, recall `0.4052`,
+  F1 `0.3370` (threshold table stored in the CSV above).
+
+Interpretation:
+
+- Calibration dramatically improves Brier score (probability quality) with only a
+  slight AUC shift.
+- The calibrated model prefers a much lower decision threshold (~0.20) to balance
+  precision and recall.
+
 ## Threshold And Precision-Recall Summary
 
 Threshold analysis is saved in `models/threshold_metrics.csv` and
@@ -158,10 +183,9 @@ Headline findings from the held-out test split:
 
 ## Recommended Next Validation Tasks
 
-1. Add calibration plots and expected calibration error style summaries.
-2. Reassess the deployed model choice after thresholding and calibration.
-3. Add confidence intervals or bootstrap uncertainty for subgroup metrics.
-4. Validate on a second dataset if feasible.
+1. Reassess the deployed model choice after thresholding and calibration (decide whether to serve the calibrated sigmoid model).
+2. Add confidence intervals or bootstrap uncertainty for subgroup metrics.
+3. Validate on a second dataset if feasible.
 
 ## Reproducibility
 
