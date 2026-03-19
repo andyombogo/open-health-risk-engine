@@ -61,15 +61,6 @@ def load_predictor():
 
 predictor = load_predictor()
 
-st.sidebar.title("Health Risk Engine")
-st.sidebar.markdown("*Enter lifestyle and demographic information below.*")
-st.sidebar.divider()
-
-st.sidebar.subheader("Demographics")
-age = st.sidebar.slider("Age", 18, 80, 35)
-sex = st.sidebar.radio("Sex", ["Male", "Female"], horizontal=True)
-sex_female = 1 if sex == "Female" else 0
-
 education_map = {
     "Less than 9th grade": 1,
     "9th-11th grade": 2,
@@ -77,41 +68,120 @@ education_map = {
     "Some college": 4,
     "College graduate or above": 5,
 }
-education = st.sidebar.selectbox("Education", list(education_map.keys()), index=3)
-education_val = education_map[education]
+education_labels = list(education_map.keys())
+education_lookup = {value: label for label, value in education_map.items()}
+default_inputs = {
+    "age": 35,
+    "sex_female": 0,
+    "poverty_ratio": 2.5,
+    "met_min_week": 300,
+    "sleep_hours": 7.0,
+    "sleep_trouble": 0,
+    "bmi": 24.0,
+    "drinks_per_week": 3,
+    "education": 4,
+    "race_eth": 3,
+}
 
-poverty_ratio = st.sidebar.slider(
-    "Poverty-Income Ratio",
-    0.0,
-    5.0,
-    2.5,
-    0.1,
-    help="Household income divided by poverty threshold. <1.0 = below poverty line.",
-)
+if "submitted_inputs" not in st.session_state:
+    st.session_state.submitted_inputs = default_inputs.copy()
 
-st.sidebar.divider()
-st.sidebar.subheader("Physical Activity")
-met_min_week = st.sidebar.slider(
-    "Weekly Physical Activity (MET-min/week)",
-    0,
-    3000,
-    300,
-    50,
-    help="WHO recommends >=600 MET-min/week (e.g. 150 min moderate activity).",
-)
+current_inputs = st.session_state.submitted_inputs
 
-st.sidebar.divider()
-st.sidebar.subheader("Sleep")
-sleep_hours = st.sidebar.slider("Average Sleep (hours/night)", 3.0, 12.0, 7.0, 0.5)
-sleep_trouble = st.sidebar.checkbox("Regularly trouble sleeping?")
+st.sidebar.title("Health Risk Engine")
+st.sidebar.markdown("*Adjust the inputs below, then click `Update risk`.*")
 
-st.sidebar.divider()
-st.sidebar.subheader("Body Metrics")
-bmi = st.sidebar.slider("BMI (kg/m^2)", 15.0, 50.0, 24.0, 0.5)
+with st.sidebar.form("risk_inputs"):
+    st.subheader("Demographics")
+    age = st.slider("Age", 18, 80, int(current_inputs["age"]))
+    sex = st.radio(
+        "Sex",
+        ["Male", "Female"],
+        index=1 if current_inputs["sex_female"] else 0,
+        horizontal=True,
+    )
+    sex_female = 1 if sex == "Female" else 0
 
-st.sidebar.divider()
-st.sidebar.subheader("Alcohol")
-drinks_per_week = st.sidebar.slider("Drinks per week (estimated)", 0, 40, 3)
+    education = st.selectbox(
+        "Education",
+        education_labels,
+        index=education_labels.index(education_lookup[current_inputs["education"]]),
+    )
+    education_val = education_map[education]
+
+    poverty_ratio = st.slider(
+        "Poverty-Income Ratio",
+        0.0,
+        5.0,
+        float(current_inputs["poverty_ratio"]),
+        0.1,
+        help="Household income divided by poverty threshold. <1.0 = below poverty line.",
+    )
+
+    st.divider()
+    st.subheader("Physical Activity")
+    met_min_week = st.slider(
+        "Weekly Physical Activity (MET-min/week)",
+        0,
+        3000,
+        int(current_inputs["met_min_week"]),
+        50,
+        help="WHO recommends >=600 MET-min/week (e.g. 150 min moderate activity).",
+    )
+
+    st.divider()
+    st.subheader("Sleep")
+    sleep_hours = st.slider(
+        "Average Sleep (hours/night)",
+        3.0,
+        12.0,
+        float(current_inputs["sleep_hours"]),
+        0.5,
+    )
+    sleep_trouble = st.checkbox(
+        "Regularly trouble sleeping?",
+        value=bool(current_inputs["sleep_trouble"]),
+    )
+
+    st.divider()
+    st.subheader("Body Metrics")
+    bmi = st.slider("BMI (kg/m^2)", 15.0, 50.0, float(current_inputs["bmi"]), 0.5)
+
+    st.divider()
+    st.subheader("Alcohol")
+    drinks_per_week = st.slider(
+        "Drinks per week (estimated)",
+        0,
+        40,
+        int(current_inputs["drinks_per_week"]),
+    )
+
+    update_risk = st.form_submit_button("Update risk", use_container_width=True)
+
+if update_risk:
+    st.session_state.submitted_inputs = {
+        "age": age,
+        "sex_female": sex_female,
+        "poverty_ratio": poverty_ratio,
+        "met_min_week": met_min_week,
+        "sleep_hours": sleep_hours,
+        "sleep_trouble": int(sleep_trouble),
+        "bmi": bmi,
+        "drinks_per_week": drinks_per_week,
+        "education": education_val,
+        "race_eth": 3,
+    }
+
+inputs = st.session_state.submitted_inputs
+age = inputs["age"]
+sex_female = inputs["sex_female"]
+poverty_ratio = inputs["poverty_ratio"]
+met_min_week = inputs["met_min_week"]
+sleep_hours = inputs["sleep_hours"]
+sleep_trouble = inputs["sleep_trouble"]
+bmi = inputs["bmi"]
+drinks_per_week = inputs["drinks_per_week"]
+education_val = inputs["education"]
 
 col_title, _ = st.columns([3, 1])
 with col_title:
@@ -133,19 +203,6 @@ If you are concerned about mental health, please consult a qualified healthcare 
 )
 
 st.divider()
-
-inputs = {
-    "age": age,
-    "sex_female": sex_female,
-    "poverty_ratio": poverty_ratio,
-    "met_min_week": met_min_week,
-    "sleep_hours": sleep_hours,
-    "sleep_trouble": int(sleep_trouble),
-    "bmi": bmi,
-    "drinks_per_week": drinks_per_week,
-    "education": education_val,
-    "race_eth": 3,
-}
 
 if predictor is None:
     st.warning("Model not loaded. Run `python src/train_model.py` first.")
