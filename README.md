@@ -15,7 +15,7 @@ Open Health Risk Engine is an end-to-end data science portfolio project that use
 
 ## Live Demo
 
-- Best direct calculator link: https://andyombogo-open-health-risk-engine.hf.space/?embed=true&__theme=light&v=20260319-3
+- Best direct calculator link: https://andyombogo-open-health-risk-engine.hf.space/?embed=true&__theme=light&v=20260319-4
 - Direct Hugging Face app: https://andyombogo-open-health-risk-engine.hf.space
 - Render app: https://open-health-risk-engine.onrender.com
 - Hugging Face project page: https://huggingface.co/spaces/andyombogo/open-health-risk-engine
@@ -124,7 +124,7 @@ py -3 -m pip --python .\.venv\Scripts\python.exe install -r requirements.txt
 - GitHub repository URL: https://github.com/andyombogo/open-health-risk-engine
 - Render live app URL: https://open-health-risk-engine.onrender.com
 - Hugging Face Space URL: https://huggingface.co/spaces/andyombogo/open-health-risk-engine
-- Hugging Face quick app URL: https://andyombogo-open-health-risk-engine.hf.space/?embed=true&__theme=light&v=20260319-3
+- Hugging Face quick app URL: https://andyombogo-open-health-risk-engine.hf.space/?embed=true&__theme=light&v=20260319-4
 - Hugging Face direct app URL: https://andyombogo-open-health-risk-engine.hf.space
 - The app is packaged for Hugging Face Spaces using the `docker` SDK because Hugging Face deprecated Streamlit as the default built-in SDK in 2025.
 - For Docker-based Streamlit Spaces, the app runs with XSRF protection disabled to avoid iframe/cookie issues on the Hugging Face Spaces page.
