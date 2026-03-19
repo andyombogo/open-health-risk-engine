@@ -55,4 +55,3 @@ pytest-cache-files-*/
 .tmp/
 .hfspace/
 .hfspace_runtime/
-{data,notebooks,src,explainability,dashboard,tests,.github/
