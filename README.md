@@ -16,10 +16,12 @@ Open Health Risk Engine is an end-to-end data science portfolio project that use
 ## Live Demo
 
 - Primary live app (Render): https://open-health-risk-engine.onrender.com
+- Quick Hugging Face app link: https://andyombogo-open-health-risk-engine.hf.space/?embed=true&__theme=light&v=20260319
 - Direct Hugging Face app: https://andyombogo-open-health-risk-engine.hf.space
 - Hugging Face project page: https://huggingface.co/spaces/andyombogo/open-health-risk-engine
 
 Use the Render or `hf.space` links when you want the app itself. The `huggingface.co/spaces/...` link is the project page around the app, not just the calculator.
+If the wrapped Hugging Face page looks blank after a redeploy, use the direct `hf.space` quick link above to bypass the wrapper and force a fresh page load.
 
 ## What This Project Does
 
@@ -98,8 +100,10 @@ py -3 -m pip --python .\.venv\Scripts\python.exe install -r requirements.txt
 - GitHub repository URL: https://github.com/andyombogo/open-health-risk-engine
 - Render live app URL: https://open-health-risk-engine.onrender.com
 - Hugging Face Space URL: https://huggingface.co/spaces/andyombogo/open-health-risk-engine
+- Hugging Face quick app URL: https://andyombogo-open-health-risk-engine.hf.space/?embed=true&__theme=light&v=20260319
 - Hugging Face direct app URL: https://andyombogo-open-health-risk-engine.hf.space
 - The app is packaged for Hugging Face Spaces using the `docker` SDK because Hugging Face deprecated Streamlit as the default built-in SDK in 2025.
+- For Docker-based Streamlit Spaces, the app runs with XSRF protection disabled to avoid iframe/cookie issues on the Hugging Face Spaces page.
 - Recommended production-like host for fast links: Render using `render.yaml` on a non-sleeping `starter` plan.
 
 ## Important Disclaimer
