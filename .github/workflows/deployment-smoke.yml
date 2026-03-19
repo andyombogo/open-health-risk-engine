@@ -1,0 +1,63 @@
+name: Deployment Smoke Check
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/deployment-smoke.yml
+      - app.py
+      - Dockerfile
+      - render.yaml
+      - runtime_requirements.txt
+      - dashboard/**
+      - src/**
+  schedule:
+    - cron: "0 * * * *"
+
+jobs:
+  smoke-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check live deployment endpoints
+        shell: bash
+        env:
+          URL_MATRIX: |
+            Render root|https://open-health-risk-engine.onrender.com|200
+            Render health|https://open-health-risk-engine.onrender.com/_stcore/health|200
+            Hugging Face root|https://andyombogo-open-health-risk-engine.hf.space|200
+            Hugging Face health|https://andyombogo-open-health-risk-engine.hf.space/_stcore/health|200
+        run: |
+          set -euo pipefail
+
+          while IFS='|' read -r name url expected_status; do
+            [[ -z "${name}" ]] && continue
+
+            echo "::group::${name}"
+            body_file="$(mktemp)"
+            status_code="$(curl --silent --show-error --location \
+              --max-time 60 --retry 3 --retry-delay 2 --retry-all-errors \
+              --output "${body_file}" --write-out "%{http_code}" "${url}")"
+
+            echo "URL: ${url}"
+            echo "Status: ${status_code}"
+
+            if [[ "${status_code}" != "${expected_status}" ]]; then
+              echo "Expected HTTP ${expected_status} but received ${status_code}"
+              head -c 1000 "${body_file}" || true
+              exit 1
+            fi
+
+            if [[ "${url}" == *"/_stcore/health" ]]; then
+              health_body="$(tr -d '\r\n' < "${body_file}")"
+              if [[ "${health_body}" != "ok" ]]; then
+                echo "Expected health endpoint to return 'ok' but received '${health_body}'"
+                exit 1
+              fi
+            fi
+
+            echo "Smoke check passed"
+            echo "::endgroup::"
+          done <<< "${URL_MATRIX}"

@@ -13,6 +13,14 @@ short_description: Explainable NHANES mental health risk demo in Streamlit.
 
 Open Health Risk Engine is an end-to-end data science portfolio project that uses public NHANES 2017-March 2020 pre-pandemic survey data to estimate depression risk from lifestyle and demographic variables. It includes a reproducible data pipeline, model comparison, SHAP-based explainability, automated tests, and a Streamlit interface for interactive scoring.
 
+## Live Demo
+
+- Primary live app (Render): https://open-health-risk-engine.onrender.com
+- Direct Hugging Face app: https://andyombogo-open-health-risk-engine.hf.space
+- Hugging Face project page: https://huggingface.co/spaces/andyombogo/open-health-risk-engine
+
+Use the Render or `hf.space` links when you want the app itself. The `huggingface.co/spaces/...` link is the project page around the app, not just the calculator.
+
 ## What This Project Does
 
 - Downloads public NHANES survey files from the CDC
@@ -88,10 +96,11 @@ py -3 -m pip --python .\.venv\Scripts\python.exe install -r requirements.txt
 ## Deployment Notes
 
 - GitHub repository URL: https://github.com/andyombogo/open-health-risk-engine
+- Render live app URL: https://open-health-risk-engine.onrender.com
 - Hugging Face Space URL: https://huggingface.co/spaces/andyombogo/open-health-risk-engine
-- Fastest live app URL: https://andyombogo-open-health-risk-engine.hf.space
+- Hugging Face direct app URL: https://andyombogo-open-health-risk-engine.hf.space
 - The app is packaged for Hugging Face Spaces using the `docker` SDK because Hugging Face deprecated Streamlit as the default built-in SDK in 2025.
-- Recommended production-like host for fast links: Render using `render.yaml` on a non-sleeping plan.
+- Recommended production-like host for fast links: Render using `render.yaml` on a non-sleeping `starter` plan.
 
 ## Important Disclaimer
 

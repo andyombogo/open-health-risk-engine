@@ -14,7 +14,8 @@ Updated as milestones are completed.
 - [x] SHAP explainability (global + local)
 - [x] Streamlit interactive dashboard
 - [x] Unit tests + CI pipeline
-- [ ] Hugging Face Spaces deployment
+- [x] Hugging Face Spaces deployment
+- [x] Render web deployment
 - [ ] Kaggle notebook version (for reach/visibility)
 - [ ] Peer review of feature engineering decisions
 
