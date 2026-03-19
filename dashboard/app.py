@@ -52,11 +52,18 @@ st.markdown("""
         letter-spacing: 0.05em;
     }
     .disclaimer {
-        background: #fef3c7;
-        border-left: 4px solid #f59e0b;
+        background: #fff7d6;
+        border: 1px solid #f59e0b;
+        border-left: 6px solid #d97706;
         padding: 1rem;
-        border-radius: 4px;
-        font-size: 0.85rem;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        line-height: 1.55;
+        color: #1f2937;
+        box-shadow: 0 8px 24px rgba(217, 119, 6, 0.12);
+    }
+    .disclaimer strong {
+        color: #92400e;
     }
     .factor-bar {
         height: 8px;
