@@ -16,7 +16,7 @@ st.set_page_config(
     page_title="Open Health Risk Engine",
     page_icon="OH",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 st.markdown(
@@ -24,11 +24,15 @@ st.markdown(
 <style>
     [data-testid="stAppViewContainer"] {
         background:
-            radial-gradient(circle at top left, #eff6ff 0, #eff6ff 20%, transparent 45%),
-            linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+            radial-gradient(circle at top left, rgba(14, 116, 144, 0.18) 0, transparent 28%),
+            radial-gradient(circle at top right, rgba(37, 99, 235, 0.16) 0, transparent 24%),
+            linear-gradient(180deg, #eaf4ff 0%, #f7fbff 22%, #ffffff 58%, #f8fafc 100%);
     }
     [data-testid="stHeader"] {
-        background: rgba(248, 250, 252, 0.9);
+        background: rgba(234, 244, 255, 0.88);
+    }
+    [data-testid="stMainBlockContainer"] {
+        padding-top: 2.2rem;
     }
     .metric-label {
         font-size: 0.85rem;
@@ -37,55 +41,95 @@ st.markdown(
         letter-spacing: 0.05em;
     }
     .hero-card {
-        background: rgba(255, 255, 255, 0.92);
-        border: 1px solid #dbeafe;
-        border-radius: 22px;
-        padding: 1.4rem 1.5rem;
-        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+        background:
+            radial-gradient(circle at top right, rgba(96, 165, 250, 0.35) 0, transparent 28%),
+            linear-gradient(135deg, #082f49 0%, #0f172a 52%, #1d4ed8 100%);
+        border: 1px solid rgba(191, 219, 254, 0.35);
+        border-radius: 28px;
+        padding: 1.7rem 1.8rem;
+        box-shadow: 0 28px 60px rgba(15, 23, 42, 0.22);
     }
-    .eyebrow {
-        color: #2563eb;
-        font-size: 0.78rem;
+    .hero-kicker {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.12);
+        color: #dbeafe;
+        padding: 0.38rem 0.7rem;
+        border-radius: 999px;
+        font-size: 0.76rem;
         text-transform: uppercase;
         letter-spacing: 0.12em;
         font-weight: 700;
+        border: 1px solid rgba(219, 234, 254, 0.16);
     }
-    .subcopy {
-        color: #475569;
-        font-size: 0.98rem;
+    .hero-title {
+        color: #f8fafc;
+        font-size: clamp(2.2rem, 4vw, 3.3rem);
+        font-weight: 800;
+        line-height: 1.02;
+        margin: 0.95rem 0 0.65rem 0;
+        letter-spacing: -0.04em;
+    }
+    .hero-subcopy {
+        color: #dbeafe;
+        font-size: 1.02rem;
         line-height: 1.6;
+        max-width: 52rem;
+    }
+    .hero-meta {
+        margin-top: 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+    }
+    .hero-chip {
+        background: rgba(255, 255, 255, 0.12);
+        color: #eff6ff;
+        border: 1px solid rgba(219, 234, 254, 0.14);
+        border-radius: 999px;
+        padding: 0.42rem 0.78rem;
+        font-size: 0.83rem;
+        font-weight: 600;
     }
     .disclaimer {
-        background: #fff8db;
-        border: 1px solid #fbbf24;
+        background: rgba(255, 251, 235, 0.92);
+        border: 1px solid #fcd34d;
         border-left: 6px solid #d97706;
         padding: 1rem 1.1rem;
         border-radius: 16px;
         font-size: 0.9rem;
         line-height: 1.55;
         color: #1f2937;
-        box-shadow: 0 10px 30px rgba(217, 119, 6, 0.12);
+        box-shadow: 0 12px 28px rgba(217, 119, 6, 0.1);
     }
     .disclaimer strong {
         color: #92400e;
     }
+    .section-shell {
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid #dbeafe;
+        border-radius: 22px;
+        padding: 1rem 1rem 0.7rem 1rem;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+    }
     .panel-title {
         color: #0f172a;
-        font-size: 1.05rem;
+        font-size: 1.08rem;
         font-weight: 700;
         margin-bottom: 0.25rem;
     }
     .panel-copy {
-        color: #64748b;
-        font-size: 0.92rem;
+        color: #475569;
+        font-size: 0.94rem;
         margin-bottom: 0.9rem;
     }
     .score-shell {
-        background: linear-gradient(160deg, #ffffff 0%, #f8fafc 100%);
+        background:
+            radial-gradient(circle at top right, rgba(125, 211, 252, 0.2) 0, transparent 26%),
+            linear-gradient(160deg, #ffffff 0%, #f8fafc 100%);
         border-radius: 24px;
-        padding: 1.3rem;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+        padding: 1.35rem;
+        border: 1px solid #cbd5e1;
+        box-shadow: 0 22px 50px rgba(15, 23, 42, 0.1);
     }
     .score-caption {
         color: #475569;
@@ -124,6 +168,10 @@ st.markdown(
         margin: 0.25rem 0.35rem 0 0;
         font-size: 0.82rem;
         font-weight: 600;
+    }
+    .footer-note {
+        color: #475569;
+        font-size: 0.88rem;
     }
 </style>
 """,
@@ -184,14 +232,24 @@ def score_inputs(inputs: dict) -> dict:
 
 title_col, repo_col = st.columns([4, 1])
 with title_col:
-    st.markdown('<div class="hero-card">', unsafe_allow_html=True)
-    st.markdown('<div class="eyebrow">Clinical Calculator Demo</div>', unsafe_allow_html=True)
-    st.title("Open Health Risk Engine")
     st.markdown(
-        '<div class="subcopy">A lighter, calculator-style experience for fast mental health risk estimation from lifestyle and demographic inputs.</div>',
+        """
+<div class="hero-card">
+    <div class="hero-kicker">Clinical Calculator Demo</div>
+    <div class="hero-title">Open Health Risk Engine</div>
+    <div class="hero-subcopy">
+        Explainable preventive mental health analytics in a faster, clearer calculator interface.
+        Adjust the inputs below and watch the estimated risk update in place.
+    </div>
+    <div class="hero-meta">
+        <span class="hero-chip">Auto-updating calculator</span>
+        <span class="hero-chip">NHANES-based demo model</span>
+        <span class="hero-chip">Explainable output</span>
+    </div>
+</div>
+""",
         unsafe_allow_html=True,
     )
-    st.markdown("</div>", unsafe_allow_html=True)
 with repo_col:
     if REPO_URL:
         st.link_button("View GitHub", REPO_URL, use_container_width=True)
@@ -216,6 +274,7 @@ def render_calculator():
     input_col, result_col = st.columns([1.15, 0.85], gap="large")
 
     with input_col:
+        st.markdown('<div class="section-shell">', unsafe_allow_html=True)
         st.markdown('<div class="panel-title">Calculator Inputs</div>', unsafe_allow_html=True)
         st.markdown(
             '<div class="panel-copy">Adjust the fields below and the score updates automatically.</div>',
@@ -274,6 +333,7 @@ def render_calculator():
             key="calc_met_min_week",
             help="WHO guidance is about 600 MET-min/week or more.",
         )
+        st.markdown("</div>", unsafe_allow_html=True)
 
         inputs = {
             "age": age,
@@ -420,6 +480,7 @@ with st.expander("Model snapshot"):
 
 st.markdown("---")
 footer_repo = f"[GitHub repository]({REPO_URL})" if REPO_URL else "GitHub repository"
-st.caption(
-    f"Open Health Risk Engine | NHANES-based research demo | {footer_repo}"
+st.markdown(
+    f'<div class="footer-note">Open Health Risk Engine | NHANES-based research demo | {footer_repo}</div>',
+    unsafe_allow_html=True,
 )
