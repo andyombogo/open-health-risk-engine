@@ -34,6 +34,44 @@ st.markdown(
     [data-testid="stMainBlockContainer"] {
         padding-top: 2.2rem;
     }
+    [data-testid="stWidgetLabel"] p,
+    [data-testid="stWidgetLabel"] span {
+        color: #0f172a !important;
+        font-weight: 700 !important;
+        font-size: 0.96rem !important;
+        letter-spacing: -0.01em;
+    }
+    [data-testid="stRadio"] {
+        margin-top: 0.25rem;
+    }
+    [data-baseweb="radio"] {
+        background: linear-gradient(180deg, #ffffff 0%, #eff6ff 100%);
+        border: 1px solid #bfdbfe;
+        border-radius: 14px;
+        padding: 0.48rem 0.8rem;
+        box-shadow: 0 10px 24px rgba(37, 99, 235, 0.08);
+    }
+    [data-baseweb="radio"] * {
+        color: #0f172a !important;
+        font-weight: 600 !important;
+    }
+    [data-baseweb="select"] > div,
+    [data-baseweb="base-input"] > div {
+        background: rgba(255, 255, 255, 0.96);
+        border-color: #93c5fd !important;
+        box-shadow: 0 10px 24px rgba(37, 99, 235, 0.08);
+    }
+    [data-baseweb="slider"] [role="slider"] {
+        background: #1d4ed8 !important;
+        border: 2px solid #eff6ff !important;
+        box-shadow: 0 0 0 4px rgba(191, 219, 254, 0.95);
+    }
+    [data-baseweb="slider"] [data-testid="stTickBar"] {
+        background: linear-gradient(90deg, #bfdbfe 0%, #dbeafe 100%);
+    }
+    [data-testid="stToggle"] {
+        padding-top: 0.15rem;
+    }
     .metric-label {
         font-size: 0.85rem;
         color: #6b7280;
@@ -122,6 +160,34 @@ st.markdown(
         font-size: 0.94rem;
         margin-bottom: 0.9rem;
     }
+    .input-highlight-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.8rem;
+        margin: 1rem 0 1.15rem 0;
+    }
+    .input-highlight {
+        background:
+            radial-gradient(circle at top right, rgba(125, 211, 252, 0.18) 0, transparent 40%),
+            linear-gradient(180deg, #f8fbff 0%, #eff6ff 100%);
+        border: 1px solid #bfdbfe;
+        border-radius: 18px;
+        padding: 0.9rem 1rem;
+        box-shadow: 0 14px 30px rgba(37, 99, 235, 0.08);
+    }
+    .input-highlight-label {
+        color: #475569;
+        font-size: 0.76rem;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        font-weight: 700;
+    }
+    .input-highlight-value {
+        color: #0f172a;
+        font-size: 1.2rem;
+        font-weight: 800;
+        margin-top: 0.28rem;
+    }
     .score-shell {
         background:
             radial-gradient(circle at top right, rgba(125, 211, 252, 0.2) 0, transparent 26%),
@@ -172,6 +238,11 @@ st.markdown(
     .footer-note {
         color: #475569;
         font-size: 0.88rem;
+    }
+    @media (max-width: 900px) {
+        .input-highlight-grid {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 """,
@@ -332,6 +403,25 @@ def render_calculator():
             50,
             key="calc_met_min_week",
             help="WHO guidance is about 600 MET-min/week or more.",
+        )
+        st.markdown(
+            f"""
+<div class="input-highlight-grid">
+    <div class="input-highlight">
+        <div class="input-highlight-label">Age</div>
+        <div class="input-highlight-value">{age} years</div>
+    </div>
+    <div class="input-highlight">
+        <div class="input-highlight-label">Sex</div>
+        <div class="input-highlight-value">{sex}</div>
+    </div>
+    <div class="input-highlight">
+        <div class="input-highlight-label">BMI</div>
+        <div class="input-highlight-value">{bmi:.1f}</div>
+    </div>
+</div>
+""",
+            unsafe_allow_html=True,
         )
         st.markdown("</div>", unsafe_allow_html=True)
 
