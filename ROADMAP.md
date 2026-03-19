@@ -40,12 +40,12 @@ it should:
 **Goal:** Make the current project stronger as a public demo before adding new
 research tracks.
 
-- [ ] Add a model card covering intended use, limitations, metrics, and the non-clinical disclaimer
+- [x] Add a model card covering intended use, limitations, metrics, and the non-clinical disclaimer
 - [ ] Add calibration, threshold tuning, and precision-recall analysis for the deployed model
 - [ ] Add subgroup evaluation by sex, age band, and poverty band
 - [ ] Add a short architecture diagram and one demo GIF or screenshot walkthrough to README
-- [ ] Add example user scenarios with expected outputs
-- [ ] Add `LICENSE` and `CONTRIBUTING.md`
+- [x] Add example user scenarios with expected outputs
+- [x] Add `LICENSE` and `CONTRIBUTING.md`
 - [ ] Fix repo hygiene issues such as encoding cleanup, `.gitignore` warnings, and doc consistency
 - [ ] Add friendlier loading, empty-state, and failure-state handling in the live app
 - [ ] Add mobile and accessibility polish for the calculator UI

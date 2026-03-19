@@ -43,6 +43,15 @@ The current trained demo model uses **NHANES 2017-March 2020 pre-pandemic data**
 | Random Forest | 0.7591 | 0.3295 | 0.2331 | 0.5621 |
 | XGBoost | 0.7438 | 0.2518 | 0.2800 | 0.2288 |
 
+## Project Docs
+
+- [Roadmap](ROADMAP.md)
+- [Model card](docs/MODEL_CARD.md)
+- [Validation report](docs/VALIDATION_REPORT.md)
+- [Example scenarios](docs/EXAMPLE_SCENARIOS.md)
+- [Contributing guide](CONTRIBUTING.md)
+- [License](LICENSE)
+
 ## Demo Assets
 
 ![ROC Curves](figures/roc_curves.png)
@@ -53,18 +62,28 @@ The current trained demo model uses **NHANES 2017-March 2020 pre-pandemic data**
 
 ```text
 open-health-risk-engine/
-├── app.py
-├── dashboard/app.py
-├── explainability/shap_analysis.py
-├── src/download_data.py
-├── src/data_cleaning.py
-├── src/feature_engineering.py
-├── src/train_model.py
-├── src/predict_risk.py
-├── tests/test_pipeline.py
-├── models/
-├── figures/
-└── data/
+|-- app.py
+|-- dashboard/
+|   |-- app.py
+|   `-- live_app.py
+|-- docs/
+|   |-- MODEL_CARD.md
+|   |-- VALIDATION_REPORT.md
+|   `-- EXAMPLE_SCENARIOS.md
+|-- explainability/
+|   `-- shap_analysis.py
+|-- src/
+|   |-- download_data.py
+|   |-- data_cleaning.py
+|   |-- feature_engineering.py
+|   |-- train_model.py
+|   `-- predict_risk.py
+|-- tests/
+|   |-- test_pipeline.py
+|   `-- test_inference_smoke.py
+|-- models/
+|-- figures/
+`-- data/
 ```
 
 ## Local Setup
@@ -110,3 +129,4 @@ py -3 -m pip --python .\.venv\Scripts\python.exe install -r requirements.txt
 ## Important Disclaimer
 
 This is a research and portfolio demo, not a diagnostic or clinical decision tool. Predictions are based on population-level survey data and do not replace professional medical evaluation.
+See the [model card](docs/MODEL_CARD.md) and [validation report](docs/VALIDATION_REPORT.md) for current limitations and evaluation notes.
