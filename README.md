@@ -116,25 +116,25 @@ open-health-risk-engine/
 ```mermaid
 flowchart LR
     subgraph Data Pipeline
-        A[NHANES raw files] --> B[download_data.py]
-        B --> C[data_cleaning.py]
-        C --> D[feature_engineering.py]
+        A["NHANES raw files"] --> B["download_data.py"]
+        B --> C["data_cleaning.py"]
+        C --> D["feature_engineering.py"]
     end
 
     subgraph Modeling
-        D --> E[train_model.py<br/>RF, XGBoost, Logistic]
-        E --> F[validation_analysis.py<br/>calibration + PR]
-        E --> G[error_analysis.py<br/>subgroup checks]
+        D --> E["train_model.py\nRF, XGBoost, Logistic"]
+        E --> F["validation_analysis.py\ncalibration and PR"]
+        E --> G["error_analysis.py\nsubgroup checks"]
     end
 
     subgraph Serving
-        E --> H[predict_risk.py<br/>risk + PHQ-9 estimate]
-        H --> I[Streamlit UI<br/>app.py / dashboard/live_app.py]
+        E --> H["predict_risk.py\nrisk and PHQ-9 estimate"]
+        H --> I["Streamlit UI\napp.py and dashboard/live_app.py"]
     end
 
     subgraph Deploy
-        I --> J[Hugging Face Space (Docker)]
-        I --> K[Render Web App]
+        I --> J["Hugging Face Space Docker"]
+        I --> K["Render Web App"]
     end
 ```
 
