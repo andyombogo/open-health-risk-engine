@@ -1,0 +1,65 @@
+{
+  "info": {
+    "name": "Open Health Risk Engine API",
+    "_postman_id": "4ca84849-5a8f-4e7f-b2a4-1f66bd1a2af1",
+    "description": "Collection for testing the Open Health Risk Engine FastAPI wrapper.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "api_key",
+      "value": "replace-with-a-strong-local-key"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Predict",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-API-Key",
+            "value": "{{api_key}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"age\": 35,\n  \"sex_female\": 0,\n  \"poverty_ratio\": 2.5,\n  \"met_min_week\": 300,\n  \"sleep_hours\": 7.0,\n  \"sleep_trouble\": 0,\n  \"bmi\": 24.0,\n  \"drinks_per_week\": 3,\n  \"education\": 4,\n  \"race_eth\": 3\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/predict",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "predict"
+          ]
+        }
+      }
+    }
+  ]
+}

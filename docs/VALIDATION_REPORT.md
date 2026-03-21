@@ -3,7 +3,7 @@
 ## Scope
 
 This document summarizes the current evaluation state of the models in Open
-Health Risk Engine as of March 19, 2026.
+Health Risk Engine as of March 21, 2026.
 
 ## Evaluation Setup
 
@@ -140,22 +140,23 @@ For the deployed Random Forest on the test set:
 
 Subgroup evaluation is saved in `models/subgroup_metrics.csv`.
 The current analysis covers sex, age band, poverty band, and race on the
-held-out test split.
+held-out test split. The subgroup table now includes 300-replicate percentile
+bootstrap intervals for AUC, precision, recall, and F1.
 
 Selected findings:
 
 - By sex:
-  - Female: AUC `0.7423`, precision `0.2599`, recall `0.6020`, F1 `0.3631`
-  - Male: AUC `0.7615`, precision `0.1901`, recall `0.4909`, F1 `0.2741`
+  - Female: AUC `0.7423` (CI `0.6901-0.7966`), precision `0.2599`, recall `0.6020` (CI `0.5107-0.7051`), F1 `0.3631`
+  - Male: AUC `0.7615` (CI `0.6950-0.8186`), precision `0.1901`, recall `0.4909` (CI `0.3708-0.6149`), F1 `0.2741`
 - By age band:
-  - `50-64` has the highest recall at `0.7209` and the highest F1 at `0.3713`
-  - `65+` has the lowest AUC among the age bands at `0.7208`
+  - `50-64` has the highest recall at `0.7209` (CI `0.5807-0.8536`) and the highest F1 at `0.3713`
+  - `65+` has the lowest AUC among the age bands at `0.7208` (CI `0.6470-0.8076`)
 - By poverty band:
-  - `<1.0` has the highest recall at `0.7429`
-  - `2.0+` has the highest AUC at `0.7848`
+  - `<1.0` has the highest recall at `0.7429` (CI `0.5810-0.8857`)
+  - `2.0+` has the highest AUC at `0.7848` (CI `0.7344-0.8297`)
 - By race:
   - Non-Hispanic White: precision `0.3000`, recall `0.5909`, F1 `0.3980`
-  - Non-Hispanic Asian: AUC `0.8214`, but prevalence is low and recall is `0.2000`
+  - Non-Hispanic Asian: AUC `0.8214`, but prevalence is low and recall is `0.2000` with a wide CI of `0.0000-0.5000`
   - Other / Multiracial: F1 `0.4103`, but sample size is only `76`
 
 Interpretation:
@@ -178,13 +179,11 @@ Headline findings from the held-out test split:
 ## Remaining Validation Gaps
 
 - No external validation dataset
-- No post-hoc probability calibration method has been applied yet
-- No confidence intervals are reported for subgroup metrics
 
 ## Recommended Next Validation Tasks
 
 1. Reassess the deployed model choice after thresholding and calibration (decide whether to serve the calibrated sigmoid model).
-2. Add confidence intervals or bootstrap uncertainty for subgroup metrics.
+2. Compare calibrated-threshold behavior across the documented subgroups.
 3. Validate on a second dataset if feasible.
 
 ## Reproducibility

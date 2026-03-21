@@ -240,14 +240,57 @@ st.markdown(
         color: #475569;
         font-size: 0.88rem;
     }
+    .access-note {
+        color: #334155;
+        font-size: 0.92rem;
+        line-height: 1.55;
+        margin-top: 0.8rem;
+    }
+    [data-baseweb="radio"]:focus-within,
+    [data-baseweb="select"] > div:focus-within,
+    [data-baseweb="base-input"] > div:focus-within,
+    [data-baseweb="slider"] [role="slider"]:focus-visible,
+    button:focus-visible,
+    a:focus-visible {
+        outline: 3px solid #0f766e !important;
+        outline-offset: 3px !important;
+    }
     @media (max-width: 1200px) {
         .input-highlight-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
         }
     }
     @media (max-width: 900px) {
+        [data-testid="stMainBlockContainer"] {
+            padding-top: 1.2rem;
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+        .hero-card,
+        .section-shell,
+        .score-shell {
+            border-radius: 20px;
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+        .hero-title {
+            font-size: clamp(1.8rem, 8vw, 2.6rem);
+        }
+        .hero-subcopy {
+            font-size: 0.96rem;
+        }
+        [data-baseweb="radio"] {
+            padding: 0.72rem 0.9rem;
+        }
         .input-highlight-grid {
             grid-template-columns: 1fr;
+        }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            animation: none !important;
+            transition: none !important;
+            scroll-behavior: auto !important;
         }
     }
 </style>
@@ -261,12 +304,15 @@ def load_predictor():
     try:
         from src.predict_risk import RiskPredictor
 
-        return RiskPredictor()
+        return RiskPredictor(), None
     except FileNotFoundError:
-        return None
+        return None, "missing_artifacts"
+    except Exception as exc:  # catch unexpected issues so we can render a helpful state
+        return None, f"{type(exc).__name__}: {exc}"
 
 
-predictor = load_predictor()
+with st.spinner("Loading model artifacts..."):
+    predictor, load_issue = load_predictor()
 
 education_map = {
     "Less than 9th grade": 1,
@@ -321,6 +367,22 @@ def score_inputs(inputs: dict) -> dict:
         }
     return predictor.predict(inputs)
 
+
+if load_issue == "missing_artifacts":
+    st.error(
+        "Model artifacts not found. Run the training pipeline locally or include the "
+        "`models/*.joblib` files in the deployment image."
+    )
+    st.info(
+        "Local fix: run the scripts in README under 'Run The Full Pipeline'. "
+        "Hugging Face/Render: ensure the `models` folder is bundled in the Docker image."
+    )
+    st.stop()
+elif load_issue:
+    st.error(f"Model failed to load: {load_issue}")
+    st.info("Check that model dependencies are installed and artifacts are present.")
+    st.stop()
+
 title_col, repo_col = st.columns([4, 1])
 with title_col:
     st.markdown(
@@ -352,6 +414,17 @@ st.markdown(
 Predictions are based on population-level NHANES data and do not account for
 individual clinical history. Do not use this tool to make clinical decisions.
 If you are concerned about mental health, please consult a qualified healthcare professional.
+</div>
+""",
+    unsafe_allow_html=True,
+)
+
+st.markdown(
+    """
+<div class="access-note">
+Use keyboard tab navigation to move through inputs. Focus outlines are enabled for
+buttons, sliders, radio controls, and selects, and the layout stacks into a
+single-column calculator on smaller screens.
 </div>
 """,
     unsafe_allow_html=True,

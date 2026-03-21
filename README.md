@@ -48,8 +48,14 @@ The current trained demo model uses **NHANES 2017-March 2020 pre-pandemic data**
 - [Roadmap](ROADMAP.md)
 - [Model card](docs/MODEL_CARD.md)
 - [Validation report](docs/VALIDATION_REPORT.md)
+- [API guide](docs/API.md)
+- [Fairness review](docs/FAIRNESS_REVIEW.md)
+- [Safe-use guidance](docs/SAFE_USE.md)
+- [Release notes](docs/RELEASE_NOTES.md)
 - [Error analysis](docs/ERROR_ANALYSIS.md)
+- Kaggle notebook draft: `notebooks/open_health_risk_engine_kaggle.ipynb`
 - Calibration artifacts: `models/calibrated_summary.csv`, `models/calibrated_threshold_metrics_sigmoid.csv`
+- Postman collection: `docs/OpenHealthRiskEngine.postman_collection.json`
 - [Example scenarios](docs/EXAMPLE_SCENARIOS.md)
 - [Contributing guide](CONTRIBUTING.md)
 - [License](LICENSE)
@@ -62,6 +68,8 @@ The current trained demo model uses **NHANES 2017-March 2020 pre-pandemic data**
 
 ![Calibration Curve](figures/calibration_curve_random_forest.png)
 
+![Live Calculator Walkthrough](figures/app_walkthrough.png)
+
 ## Project Structure
 
 ```text
@@ -71,27 +79,72 @@ open-health-risk-engine/
 |   |-- app.py
 |   `-- live_app.py
 |-- docs/
+|   |-- API.md
 |   |-- ERROR_ANALYSIS.md
+|   |-- FAIRNESS_REVIEW.md
 |   |-- MODEL_CARD.md
+|   |-- RELEASE_NOTES.md
+|   |-- SAFE_USE.md
 |   |-- VALIDATION_REPORT.md
+|   |-- OpenHealthRiskEngine.postman_collection.json
 |   `-- EXAMPLE_SCENARIOS.md
 |-- explainability/
 |   `-- shap_analysis.py
 |-- src/
+|   |-- api.py
 |   |-- download_data.py
 |   |-- data_cleaning.py
 |   |-- feature_engineering.py
 |   |-- train_model.py
 |   |-- error_analysis.py
 |   |-- validation_analysis.py
-|   `-- predict_risk.py
+|   |-- predict_risk.py
+|   `-- verify_runtime.py
 |-- tests/
+|   |-- test_api.py
 |   |-- test_pipeline.py
 |   `-- test_inference_smoke.py
 |-- models/
 |-- figures/
+|-- notebooks/
+|   `-- open_health_risk_engine_kaggle.ipynb
 `-- data/
 ```
+
+## Architecture at a Glance
+
+```mermaid
+flowchart LR
+    subgraph Data Pipeline
+        A[NHANES raw files] --> B[download_data.py]
+        B --> C[data_cleaning.py]
+        C --> D[feature_engineering.py]
+    end
+
+    subgraph Modeling
+        D --> E[train_model.py<br/>RF, XGBoost, Logistic]
+        E --> F[validation_analysis.py<br/>calibration + PR]
+        E --> G[error_analysis.py<br/>subgroup checks]
+    end
+
+    subgraph Serving
+        E --> H[predict_risk.py<br/>risk + PHQ-9 estimate]
+        H --> I[Streamlit UI<br/>app.py / dashboard/live_app.py]
+    end
+
+    subgraph Deploy
+        I --> J[Hugging Face Space (Docker)]
+        I --> K[Render Web App]
+    end
+```
+
+## 60-Second Demo Walkthrough
+
+1. Open the quick link: https://andyombogo-open-health-risk-engine.hf.space/?embed=true&__theme=light
+2. Move the sliders or toggles (age, sleep, alcohol use, activity) and watch the risk score update instantly.
+3. Review the estimated PHQ-9 equivalent and the top drivers listed under "Top Drivers".
+4. Use the "How to interpret this result" expander for context and caveats.
+5. Follow the GitHub link in the footer to inspect the code or run the full pipeline locally.
 
 ## Local Setup
 
@@ -124,6 +177,15 @@ py -3 -m pip --python .\.venv\Scripts\python.exe install -r requirements.txt
 .\.venv\Scripts\python.exe -m streamlit run app.py
 ```
 
+## Run The API
+
+```powershell
+$env:OHRE_API_KEY = "replace-with-a-strong-local-key"
+.\.venv\Scripts\python.exe -m uvicorn src.api:app --reload
+```
+
+Then open `http://127.0.0.1:8000/docs` for Swagger UI.
+
 ## Deployment Notes
 
 - GitHub repository URL: https://github.com/andyombogo/open-health-risk-engine
@@ -133,6 +195,7 @@ py -3 -m pip --python .\.venv\Scripts\python.exe install -r requirements.txt
 - Hugging Face direct app URL: https://andyombogo-open-health-risk-engine.hf.space
 - The app is packaged for Hugging Face Spaces using the `docker` SDK because Hugging Face deprecated Streamlit as the default built-in SDK in 2025.
 - For Docker-based Streamlit Spaces, the app runs with XSRF protection disabled to avoid iframe/cookie issues on the Hugging Face Spaces page.
+- Docker and Render builds now run `src/verify_runtime.py` so deployment fails early if `models/best_model.joblib` or `models/feature_cols.joblib` are missing.
 - Recommended production-like host for fast links: Render using `render.yaml` on a non-sleeping `starter` plan.
 
 ## Important Disclaimer

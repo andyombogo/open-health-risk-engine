@@ -116,7 +116,7 @@ Additional validation artifacts now tracked in the repo:
 - This is a public-survey model, not a clinical prediction model validated for care delivery.
 - Positive-class precision is currently low, so false positives are expected.
 - Calibration and threshold analysis are now documented for the internal held-out test split, but external calibration is not yet available.
-- Subgroup performance evaluation is now documented for sex, age band, poverty band, and race on the internal held-out test split only.
+- Subgroup performance evaluation is now documented for sex, age band, poverty band, and race on the internal held-out test split only, including bootstrap confidence intervals for AUC, precision, recall, and F1.
 - External validation on a second dataset is not yet documented.
 - The public calculator now exposes broad NHANES race/ethnicity categories, but these are demographic proxy variables rather than causal explanations.
 - The app converts probability to a PHQ-9-style estimate with a simple linear scaling for UI communication only. That value should not be interpreted as a clinically validated PHQ-9 prediction.
@@ -129,8 +129,12 @@ Additional validation artifacts now tracked in the repo:
 
 ## Related Docs
 
+- [API guide](API.md)
 - [Error analysis](ERROR_ANALYSIS.md)
+- [Fairness review](FAIRNESS_REVIEW.md)
+- [Safe-use guidance](SAFE_USE.md)
 - [Validation report](VALIDATION_REPORT.md)
+- [Release notes](RELEASE_NOTES.md)
 - [Example scenarios](EXAMPLE_SCENARIOS.md)
 - [Roadmap](../ROADMAP.md)
 

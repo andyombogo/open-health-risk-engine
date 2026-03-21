@@ -31,7 +31,7 @@ it should:
 - [x] Unit tests and CI workflow
 - [x] Hugging Face Spaces deployment
 - [x] Render web deployment
-- [ ] Kaggle notebook version for reach and visibility
+- [x] Kaggle notebook version for reach and visibility
 - [ ] External review of feature engineering and modeling decisions
 
 ---
@@ -43,12 +43,13 @@ research tracks.
 - [x] Add a model card covering intended use, limitations, metrics, and the non-clinical disclaimer
 - [x] Add calibration, threshold tuning, and precision-recall analysis for the deployed model
 - [x] Add subgroup evaluation by sex, age band, and poverty band
-- [ ] Add a short architecture diagram and one demo GIF or screenshot walkthrough to README
+- [x] Add a short architecture diagram to README
+- [x] Add one demo GIF or screenshot walkthrough to README
 - [x] Add example user scenarios with expected outputs
 - [x] Add `LICENSE` and `CONTRIBUTING.md`
-- [ ] Fix repo hygiene issues such as encoding cleanup, `.gitignore` warnings, and doc consistency
-- [ ] Add friendlier loading, empty-state, and failure-state handling in the live app
-- [ ] Add mobile and accessibility polish for the calculator UI
+- [x] Fix repo hygiene issues such as encoding cleanup, `.gitignore` warnings, and doc consistency
+- [x] Add friendlier loading, empty-state, and failure-state handling in the live app
+- [x] Add mobile and accessibility polish for the calculator UI
 - [ ] Collect one round of external feedback and summarize what changed
 
 ---
@@ -57,13 +58,13 @@ research tracks.
 **Goal:** Make the scoring engine reusable by other apps and easier for other
 engineers to integrate.
 
-- [ ] FastAPI wrapper around `predict_risk.py`
-- [ ] Request and response schema validation
-- [ ] OpenAPI / Swagger documentation
-- [ ] Authentication with API keys
-- [ ] Rate limiting and request logging
-- [ ] Example `curl` and Postman collection
-- [ ] Example integration stub for another web app
+- [x] FastAPI wrapper around `predict_risk.py`
+- [x] Request and response schema validation
+- [x] OpenAPI / Swagger documentation
+- [x] Authentication with API keys
+- [x] Rate limiting and request logging
+- [x] Example `curl` and Postman collection
+- [x] Example integration stub for another web app
 
 ---
 
@@ -73,10 +74,10 @@ integration claims.
 
 - [ ] External review of feature engineering decisions
 - [x] Error analysis for false positives and false negatives
-- [ ] Fairness and subgroup performance review
+- [x] Fairness and subgroup performance review
 - [ ] External validation on a second dataset if feasible
-- [ ] Safe-use and unsafe-use guidance
-- [ ] Versioned model release notes and retraining checklist
+- [x] Safe-use and unsafe-use guidance
+- [x] Versioned model release notes and retraining checklist
 
 ---
 

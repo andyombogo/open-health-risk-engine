@@ -56,6 +56,10 @@ class RiskPredictor:
             raise FileNotFoundError(
                 f"Model not found at {model_path}. Run train_model.py first."
             )
+        if not feat_path.exists():
+            raise FileNotFoundError(
+                f"Feature column artifact not found at {feat_path}. Run train_model.py first."
+            )
 
         self.model = joblib.load(model_path)
         self.feature_cols = joblib.load(feat_path)

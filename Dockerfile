@@ -12,6 +12,7 @@ RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r runtime_requirements.txt
 
 COPY . .
+RUN python src/verify_runtime.py
 
 EXPOSE 8501
 

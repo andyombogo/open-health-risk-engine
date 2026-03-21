@@ -8,7 +8,7 @@ train_model.py.
 Outputs:
   models/calibration_table.csv
   models/threshold_metrics.csv
-  models/subgroup_metrics.csv
+  models/subgroup_metrics.csv (with bootstrap confidence intervals)
   figures/calibration_curve_random_forest.png
   figures/precision_recall_curve_random_forest.png
   figures/threshold_tradeoffs_random_forest.png
@@ -42,6 +42,7 @@ FIGURES_DIR = ROOT / "figures"
 
 RANDOM_STATE = 42
 TEST_SIZE = 0.2
+BOOTSTRAP_REPLICATES = 300
 
 RACE_LABELS = {
     1: "Mexican American",
@@ -58,6 +59,61 @@ def safe_auc(y_true: pd.Series, y_prob: pd.Series) -> float:
     if pd.Series(y_true).nunique() < 2:
         return float("nan")
     return float(roc_auc_score(y_true, y_prob))
+
+
+def compute_binary_metrics(
+    y_true: pd.Series, y_prob: pd.Series, threshold: float = 0.5
+) -> dict:
+    """Compute core classification metrics from probabilities."""
+    y_true = pd.Series(y_true).astype(int)
+    y_prob = pd.Series(y_prob).astype(float)
+    y_pred = (y_prob >= threshold).astype(int)
+    return {
+        "positive_rate": float(y_true.mean()),
+        "mean_predicted_probability": float(y_prob.mean()),
+        "predicted_positive_rate": float(y_pred.mean()),
+        "auc_roc": safe_auc(y_true, y_prob),
+        "precision": float(precision_score(y_true, y_pred, zero_division=0)),
+        "recall": float(recall_score(y_true, y_pred, zero_division=0)),
+        "f1": float(f1_score(y_true, y_pred, zero_division=0)),
+    }
+
+
+def percentile_interval(values: list[float], alpha: float = 0.05) -> tuple:
+    """Return a percentile interval for a numeric bootstrap sample."""
+    valid_values = np.asarray([value for value in values if not np.isnan(value)])
+    if len(valid_values) == 0:
+        return np.nan, np.nan
+
+    lower = float(np.quantile(valid_values, alpha / 2))
+    upper = float(np.quantile(valid_values, 1 - alpha / 2))
+    return lower, upper
+
+
+def bootstrap_metric_intervals(
+    group_df: pd.DataFrame,
+    n_bootstrap: int = BOOTSTRAP_REPLICATES,
+    random_state: int = RANDOM_STATE,
+) -> dict:
+    """Estimate subgroup metric intervals with bootstrap resampling."""
+    tracked_metrics = ["auc_roc", "precision", "recall", "f1"]
+    bootstrap_values = {metric: [] for metric in tracked_metrics}
+    rng = np.random.default_rng(random_state)
+
+    for _ in range(n_bootstrap):
+        sampled_indices = rng.integers(0, len(group_df), len(group_df))
+        sampled = group_df.iloc[sampled_indices]
+        sampled_metrics = compute_binary_metrics(sampled["y_true"], sampled["y_prob"])
+        for metric in tracked_metrics:
+            bootstrap_values[metric].append(sampled_metrics[metric])
+
+    intervals = {"bootstrap_replicates": int(n_bootstrap)}
+    for metric in tracked_metrics:
+        lower, upper = percentile_interval(bootstrap_values[metric])
+        intervals[f"{metric}_ci_low"] = round(lower, 4) if not np.isnan(lower) else np.nan
+        intervals[f"{metric}_ci_high"] = round(upper, 4) if not np.isnan(upper) else np.nan
+
+    return intervals
 
 
 def load_validation_data():
@@ -121,7 +177,11 @@ def make_threshold_table(y_true: pd.Series, y_prob: np.ndarray) -> pd.DataFrame:
 
 
 def make_subgroup_metrics(
-    groups: pd.DataFrame, y_true: pd.Series, y_prob: np.ndarray
+    groups: pd.DataFrame,
+    y_true: pd.Series,
+    y_prob: np.ndarray,
+    n_bootstrap: int = BOOTSTRAP_REPLICATES,
+    random_state: int = RANDOM_STATE,
 ) -> pd.DataFrame:
     """Compute subgroup metrics for sex, age band, poverty band, and race."""
     frame = groups.copy()
@@ -154,41 +214,31 @@ def make_subgroup_metrics(
 
     for subgroup_type, column in subgroup_specs:
         for subgroup_value, group_df in frame.groupby(column, observed=False):
+            point_metrics = compute_binary_metrics(group_df["y_true"], group_df["y_prob"])
+            bootstrap_intervals = bootstrap_metric_intervals(
+                group_df,
+                n_bootstrap=n_bootstrap,
+                random_state=random_state + len(rows),
+            )
             rows.append(
                 {
                     "subgroup_type": subgroup_type,
                     "subgroup": subgroup_value,
                     "n": int(len(group_df)),
-                    "positive_rate": round(float(group_df["y_true"].mean()), 4),
+                    "positive_rate": round(point_metrics["positive_rate"], 4),
                     "mean_predicted_probability": round(
-                        float(group_df["y_prob"].mean()), 4
+                        point_metrics["mean_predicted_probability"], 4
                     ),
                     "predicted_positive_rate": round(
-                        float(group_df["y_pred"].mean()), 4
+                        point_metrics["predicted_positive_rate"], 4
                     ),
-                    "auc_roc": round(
-                        safe_auc(group_df["y_true"], group_df["y_prob"]), 4
-                    )
-                    if pd.Series(group_df["y_true"]).nunique() > 1
+                    "auc_roc": round(point_metrics["auc_roc"], 4)
+                    if not np.isnan(point_metrics["auc_roc"])
                     else np.nan,
-                    "precision": round(
-                        precision_score(
-                            group_df["y_true"], group_df["y_pred"], zero_division=0
-                        ),
-                        4,
-                    ),
-                    "recall": round(
-                        recall_score(
-                            group_df["y_true"], group_df["y_pred"], zero_division=0
-                        ),
-                        4,
-                    ),
-                    "f1": round(
-                        f1_score(
-                            group_df["y_true"], group_df["y_pred"], zero_division=0
-                        ),
-                        4,
-                    ),
+                    "precision": round(point_metrics["precision"], 4),
+                    "recall": round(point_metrics["recall"], 4),
+                    "f1": round(point_metrics["f1"], 4),
+                    **bootstrap_intervals,
                 }
             )
 
