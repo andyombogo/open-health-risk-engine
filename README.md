@@ -50,10 +50,13 @@ The current trained demo model uses **NHANES 2017-March 2020 pre-pandemic data**
 - [Validation report](docs/VALIDATION_REPORT.md)
 - [API guide](docs/API.md)
 - [Fairness review](docs/FAIRNESS_REVIEW.md)
+- [Phase 4 plan](docs/PHASE4_PLAN.md)
+- [MIMIC access checklist](docs/MIMIC_ACCESS.md)
 - [Safe-use guidance](docs/SAFE_USE.md)
 - [Release notes](docs/RELEASE_NOTES.md)
 - [Error analysis](docs/ERROR_ANALYSIS.md)
 - Kaggle notebook draft: `notebooks/open_health_risk_engine_kaggle.ipynb`
+- Phase 4 demo notebook: `notebooks/phase4_nlp_baseline_demo.ipynb`
 - Calibration artifacts: `models/calibrated_summary.csv`, `models/calibrated_threshold_metrics_sigmoid.csv`
 - Postman collection: `docs/OpenHealthRiskEngine.postman_collection.json`
 - [Example scenarios](docs/EXAMPLE_SCENARIOS.md)
@@ -82,7 +85,9 @@ open-health-risk-engine/
 |   |-- API.md
 |   |-- ERROR_ANALYSIS.md
 |   |-- FAIRNESS_REVIEW.md
+|   |-- MIMIC_ACCESS.md
 |   |-- MODEL_CARD.md
+|   |-- PHASE4_PLAN.md
 |   |-- RELEASE_NOTES.md
 |   |-- SAFE_USE.md
 |   |-- VALIDATION_REPORT.md
@@ -95,6 +100,10 @@ open-health-risk-engine/
 |   |-- download_data.py
 |   |-- data_cleaning.py
 |   |-- feature_engineering.py
+|   |-- nlp/
+|   |   |-- baseline_pipeline.py
+|   |   |-- preprocessing.py
+|   |   `-- __init__.py
 |   |-- train_model.py
 |   |-- error_analysis.py
 |   |-- validation_analysis.py
@@ -102,13 +111,17 @@ open-health-risk-engine/
 |   `-- verify_runtime.py
 |-- tests/
 |   |-- test_api.py
+|   |-- test_nlp_baseline.py
 |   |-- test_pipeline.py
 |   `-- test_inference_smoke.py
 |-- models/
 |-- figures/
 |-- notebooks/
-|   `-- open_health_risk_engine_kaggle.ipynb
+|   |-- open_health_risk_engine_kaggle.ipynb
+|   `-- phase4_nlp_baseline_demo.ipynb
 `-- data/
+    `-- synthetic/
+        `-- phase4_note_labels.csv
 ```
 
 ## Architecture at a Glance
@@ -185,6 +198,25 @@ $env:OHRE_API_KEY = "replace-with-a-strong-local-key"
 ```
 
 Then open `http://127.0.0.1:8000/docs` for Swagger UI.
+
+## Phase 4 Baseline Track
+
+The clinical-notes work is scaffolded as a parallel research track in `src/nlp/`
+so the current NHANES calculator can remain the stable public demo. The current
+baseline combines TF-IDF note text with simple section and keyword features for
+medication, fatigue, hopelessness, and sleep-issue mentions.
+
+```powershell
+.\.venv\Scripts\python.exe -m src.nlp.baseline_pipeline --input-csv path\to\note_labels.csv
+```
+
+For a zero-dependency demo inside this repo, start with the synthetic note file:
+
+```powershell
+.\.venv\Scripts\python.exe -m src.nlp.baseline_pipeline --input-csv data\synthetic\phase4_note_labels.csv
+```
+
+You can also open `notebooks/phase4_nlp_baseline_demo.ipynb` for a notebook walkthrough.
 
 ## Deployment Notes
 

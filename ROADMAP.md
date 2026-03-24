@@ -85,6 +85,9 @@ integration claims.
 **Goal:** Extract mental health signals from free-text clinical notes as a
 separate research track.
 
+Execution note: keep this as a parallel `src/nlp/` track while the NHANES
+calculator remains the stable public artifact.
+
 - [ ] MIMIC-IV credentialing and access through PhysioNet
 - [ ] NLP feature extraction from discharge summaries
 - [ ] Medication mention extraction
@@ -132,6 +135,7 @@ A modular, open clinical decision support platform that:
 1. Finish Phase 1.5 before starting NLP or longitudinal modeling.
 2. Prioritize API usability and validation before EHR or public-health expansion.
 3. Treat clinical integration claims as a later milestone, not a near-term marketing point.
+4. If Phase 4 starts before external reviews return, keep it isolated as a research track rather than merging it into the current app.
 
 ---
 

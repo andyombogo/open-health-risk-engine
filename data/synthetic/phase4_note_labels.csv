@@ -1,0 +1,73 @@
+note_id,note_text,label
+1,"HISTORY:
+Patient reports persistent low mood, hopeless feelings, fatigue, and poor sleep for three weeks.
+ASSESSMENT:
+Depressive symptoms appear active. Sertraline discussed.
+PLAN:
+Start sertraline and arrange close follow up.",1
+2,"HISTORY:
+Sleeping well, exercising most days, and denies low mood.
+ASSESSMENT:
+Mood stable with no acute concerns.
+PLAN:
+Continue routine follow up.",0
+3,"HISTORY:
+Exhausted most days with insomnia and reduced concentration.
+ASSESSMENT:
+Symptoms worsening despite trazodone.
+PLAN:
+Medication review and safety check.",1
+4,"HISTORY:
+No depressive complaints. Energy improved and sleep normalized.
+ASSESSMENT:
+Stable condition.
+PLAN:
+Monitor at next visit.",0
+5,"HISTORY:
+Patient feels worthless and helpless with early morning awakening.
+ASSESSMENT:
+High concern for depression relapse.
+PLAN:
+Escitalopram refill and therapy referral.",1
+6,"HISTORY:
+Mood improved, sleeping seven hours, and working regularly.
+ASSESSMENT:
+Low current concern.
+PLAN:
+No medication changes.",0
+7,"HISTORY:
+Fatigue, poor sleep, low motivation, and hopeless mood continue.
+ASSESSMENT:
+Clinical picture remains concerning. Fluoxetine recently stopped.
+PLAN:
+Reassess medication strategy.",1
+8,"HISTORY:
+Denies hopelessness. Appetite and sleep are good.
+ASSESSMENT:
+Doing well overall.
+PLAN:
+Return as needed.",0
+9,"HISTORY:
+Poor sleep, exhaustion, and tearfulness after recent stressors.
+ASSESSMENT:
+Moderate depressive burden suspected.
+PLAN:
+Begin bupropion and monitor symptoms.",1
+10,"HISTORY:
+Active lifestyle with good family support and no mood complaints.
+ASSESSMENT:
+No evidence of current depressive symptoms.
+PLAN:
+Routine preventive follow up.",0
+11,"HISTORY:
+Insomnia persists and patient feels tired, hopeless, and overwhelmed.
+ASSESSMENT:
+Symptoms align with ongoing depression. Duloxetine started.
+PLAN:
+Track sleep and energy closely.",1
+12,"HISTORY:
+Reports improved energy, restful sleep, and stable mood on current routine.
+ASSESSMENT:
+Recovering well with low concern.
+PLAN:
+Continue supportive care.",0
