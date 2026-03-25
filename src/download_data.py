@@ -11,6 +11,9 @@ NHANES files used:
   - BMX_J  : Body measures (BMI)
   - ALQ_J  : Alcohol use
   - DEMO_J : Demographics (age, sex, income, education)
+  - SMQ_J  : Smoking history and current cigarette use
+  - HUQ_J  : General health and healthcare access
+  - HIQ_J  : Health insurance coverage
 
 CDC base URL: https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/
 """
@@ -30,6 +33,9 @@ NHANES_FILES = {
     "P_BMX.XPT": f"{CDC_BASE_URL}/P_BMX.xpt",
     "P_ALQ.XPT": f"{CDC_BASE_URL}/P_ALQ.xpt",
     "P_DEMO.XPT": f"{CDC_BASE_URL}/P_DEMO.xpt",
+    "P_SMQ.XPT": f"{CDC_BASE_URL}/P_SMQ.xpt",
+    "P_HUQ.XPT": f"{CDC_BASE_URL}/P_HUQ.xpt",
+    "P_HIQ.XPT": f"{CDC_BASE_URL}/P_HIQ.xpt",
 }
 
 

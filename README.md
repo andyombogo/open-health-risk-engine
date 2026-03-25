@@ -28,20 +28,20 @@ If the wrapped Hugging Face page looks blank after a redeploy, open the direct `
 
 - Downloads public NHANES survey files from the CDC
 - Cleans and merges lifestyle, sleep, BMI, alcohol, and demographic variables
-- Engineers interpretable features for mental health risk modeling
+- Engineers interpretable features for mental health risk modeling, including smoking and healthcare-access signal
 - Trains Logistic Regression, Random Forest, and XGBoost classifiers
 - Selects a best model for deployment and surfaces feature importance and SHAP explanations
 - Serves the final model through a Streamlit app designed for portfolio demos
 
 ## Model Snapshot
 
-The current trained demo model uses **NHANES 2017-March 2020 pre-pandemic data** and selects **Random Forest** as the deployment model for its balance of performance and interpretability.
+The current trained demo model uses **NHANES 2017-March 2020 pre-pandemic data** and deploys a **Logistic Regression classifier** selected by the best tuned F1 among models that still meet the screening recall floor (`Recall >= 0.70`). The current runtime threshold is `0.5403`, loaded from `models/optimal_threshold.json`.
 
-| Model | Test AUC-ROC | Test F1 | Precision | Recall |
-| --- | ---: | ---: | ---: | ---: |
-| Logistic Regression | 0.7811 | 0.3242 | 0.2110 | 0.6993 |
-| Random Forest | 0.7591 | 0.3295 | 0.2331 | 0.5621 |
-| XGBoost | 0.7438 | 0.2518 | 0.2800 | 0.2288 |
+| Model | Test AUC-ROC | Default F1 | Tuned F1 | Tuned Precision | Tuned Recall |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Logistic Regression | 0.8280 | 0.3696 | 0.3871 | 0.2667 | 0.7059 |
+| Random Forest | 0.8011 | 0.3493 | 0.3500 | 0.2300 | 0.7320 |
+| XGBoost | 0.8048 | 0.3516 | 0.3600 | 0.2416 | 0.7059 |
 
 ## Project Docs
 
@@ -50,6 +50,8 @@ The current trained demo model uses **NHANES 2017-March 2020 pre-pandemic data**
 - [Validation report](docs/VALIDATION_REPORT.md)
 - [API guide](docs/API.md)
 - [Fairness review](docs/FAIRNESS_REVIEW.md)
+- [External feedback log](docs/EXTERNAL_FEEDBACK.md)
+- [Reviewer checklist](docs/REVIEWER_CHECKLIST.md)
 - [Phase 4 plan](docs/PHASE4_PLAN.md)
 - [MIMIC access checklist](docs/MIMIC_ACCESS.md)
 - [Safe-use guidance](docs/SAFE_USE.md)
@@ -84,10 +86,12 @@ open-health-risk-engine/
 |-- docs/
 |   |-- API.md
 |   |-- ERROR_ANALYSIS.md
+|   |-- EXTERNAL_FEEDBACK.md
 |   |-- FAIRNESS_REVIEW.md
 |   |-- MIMIC_ACCESS.md
 |   |-- MODEL_CARD.md
 |   |-- PHASE4_PLAN.md
+|   |-- REVIEWER_CHECKLIST.md
 |   |-- RELEASE_NOTES.md
 |   |-- SAFE_USE.md
 |   |-- VALIDATION_REPORT.md
@@ -227,7 +231,7 @@ You can also open `notebooks/phase4_nlp_baseline_demo.ipynb` for a notebook walk
 - Hugging Face direct app URL: https://andyombogo-open-health-risk-engine.hf.space
 - The app is packaged for Hugging Face Spaces using the `docker` SDK because Hugging Face deprecated Streamlit as the default built-in SDK in 2025.
 - For Docker-based Streamlit Spaces, the app runs with XSRF protection disabled to avoid iframe/cookie issues on the Hugging Face Spaces page.
-- Docker and Render builds now run `src/verify_runtime.py` so deployment fails early if `models/best_model.joblib` or `models/feature_cols.joblib` are missing.
+- Docker and Render builds now run `src/verify_runtime.py` so deployment fails early if the configured inference artifact or `models/feature_cols.joblib` are missing.
 - Recommended production-like host for fast links: Render using `render.yaml` on a non-sleeping `starter` plan.
 
 ## Important Disclaimer

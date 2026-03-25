@@ -89,7 +89,7 @@ def resolve_decision_threshold(decision_threshold: float | None = None) -> float
 
 class RiskPredictor:
     """
-    Wraps the trained Random Forest model with input validation,
+    Wraps the trained deployment model with input validation,
     feature engineering, and interpretable output formatting.
     """
 
@@ -132,22 +132,62 @@ class RiskPredictor:
         age = float(inputs.get("age", 35))
         sex_female = int(inputs.get("sex_female", 0))
         poverty_ratio = float(inputs.get("poverty_ratio", 2.5))
+        marital_status = int(inputs.get("marital_status", 1))
+        born_us = int(inputs.get("born_us", 1))
         met_min_week = float(inputs.get("met_min_week", 0))
+        sedentary_minutes = float(inputs.get("sedentary_minutes", 360))
         sleep_hours = float(inputs.get("sleep_hours", 7.0))
         sleep_trouble = int(inputs.get("sleep_trouble", 0))
+        sleep_apnea_symptom_freq = float(inputs.get("sleep_apnea_symptom_freq", 0))
+        daytime_sleepiness_freq = float(inputs.get("daytime_sleepiness_freq", 1))
         bmi = float(inputs.get("bmi", 25.0))
         drinks_per_week = float(inputs.get("drinks_per_week", 0))
+        ever_smoked_100_cigs = int(inputs.get("ever_smoked_100_cigs", 0))
+        current_smoking_status = float(inputs.get("current_smoking_status", 3))
+        days_smoked_past_month = float(inputs.get("days_smoked_past_month", 0))
+        cigs_per_day_smoking_days = float(inputs.get("cigs_per_day_smoking_days", 0))
+        quit_attempt_last_year = int(inputs.get("quit_attempt_last_year", 0))
+        general_health = float(inputs.get("general_health", 3))
+        healthcare_visits_code = float(inputs.get("healthcare_visits_code", 2))
+        hospitalized_last_year = int(inputs.get("hospitalized_last_year", 0))
+        routine_care_place = float(inputs.get("routine_care_place", 1))
+        insurance_gap_last_year = int(inputs.get("insurance_gap_last_year", 0))
+        insured = int(inputs.get("insured", 1))
         education = float(inputs.get("education", 3))
         race_eth = int(inputs.get("race_eth", 3))
+        poverty_low = int(poverty_ratio < 1.0)
+        inactive = int(met_min_week == 0)
+        sleep_trouble_flag = int(sleep_trouble)
+        short_sleep = int(sleep_hours < 6)
+        long_sleep = int(sleep_hours > 9)
+        optimal_sleep = int(7 <= sleep_hours <= 9)
+        underweight = int(bmi < 18.5)
+        overweight = int(bmi >= 25.0)
+        obese = int(bmi >= 30.0)
+        hazardous_drinking = int(drinks_per_week > (7 if sex_female == 1 else 14))
+        lifestyle_burden_count = (
+            inactive
+            + short_sleep
+            + sleep_trouble_flag
+            + hazardous_drinking
+            + obese
+        )
 
         row = {
             # Demographics
             "age": age,
             "age_squared": age ** 2,
+            "age_18_34": int(18 <= age < 35),
+            "age_35_49": int(35 <= age < 50),
+            "age_50_64": int(50 <= age < 65),
+            "age_65_plus": int(age >= 65),
             "sex_female": sex_female,
             "poverty_ratio": poverty_ratio,
-            "poverty_low": int(poverty_ratio < 1.0),
+            "poverty_low": poverty_low,
             "education": education,
+            "marital_formerly_married": int(marital_status in {2, 3, 4}),
+            "marital_never_married": int(marital_status == 5),
+            "foreign_born": int(born_us == 2),
             "race_mexican_american": int(race_eth == 1),
             "race_other_hispanic": int(race_eth == 2),
             "race_nh_black": int(race_eth == 4),
@@ -156,29 +196,56 @@ class RiskPredictor:
             # Physical activity
             "met_min_week": met_min_week,
             "met_log": np.log1p(met_min_week),
-            "inactive": int(met_min_week == 0),
+            "inactive": inactive,
             "meets_who_guidelines": int(met_min_week >= 600),
+            "sedentary_minutes": sedentary_minutes,
+            "sedentary_high": int(sedentary_minutes >= 480),
             # Sleep
             "sleep_hours": sleep_hours,
-            "sleep_trouble": sleep_trouble,
-            "short_sleep": int(sleep_hours < 6),
-            "long_sleep": int(sleep_hours > 9),
-            "optimal_sleep": int(7 <= sleep_hours <= 9),
+            "sleep_trouble": sleep_trouble_flag,
+            "short_sleep": short_sleep,
+            "long_sleep": long_sleep,
+            "optimal_sleep": optimal_sleep,
+            "sleep_apnea_symptom_freq": sleep_apnea_symptom_freq,
+            "sleep_apnea_symptom_high": int(sleep_apnea_symptom_freq >= 2),
+            "daytime_sleepiness_freq": daytime_sleepiness_freq,
+            "daytime_sleepy_often": int(daytime_sleepiness_freq >= 3),
             # BMI
             "bmi": bmi,
-            "underweight": int(bmi < 18.5),
-            "overweight": int(bmi >= 25.0),
-            "obese": int(bmi >= 30.0),
+            "underweight": underweight,
+            "overweight": overweight,
+            "obese": obese,
             # Alcohol
             "drinks_per_week": drinks_per_week,
             "drinks_log": np.log1p(drinks_per_week),
-            "hazardous_drinking": int(
-                drinks_per_week > (7 if sex_female == 1 else 14)
-            ),
+            "hazardous_drinking": hazardous_drinking,
+            # Smoking
+            "ever_smoked_100_cigs": ever_smoked_100_cigs,
+            "current_smoker": int(current_smoking_status in {1, 2}),
+            "daily_smoker": int(current_smoking_status == 1),
+            "days_smoked_past_month": days_smoked_past_month,
+            "cigs_per_day_smoking_days": cigs_per_day_smoking_days,
+            "heavy_smoker": int(cigs_per_day_smoking_days >= 10),
+            "quit_attempt_last_year": quit_attempt_last_year,
+            # General health and healthcare access
+            "general_health_score": general_health,
+            "fair_poor_health": int(general_health >= 4),
+            "high_healthcare_use": int(healthcare_visits_code >= 4),
+            "hospitalized_last_year": hospitalized_last_year,
+            "routine_care_absent": int(routine_care_place != 1),
+            "insurance_gap_last_year": insurance_gap_last_year,
+            "insured": insured,
+            # Composite scores
+            "lifestyle_burden_count": lifestyle_burden_count,
+            "high_burden": int(lifestyle_burden_count >= 3),
+            "social_vuln_score": poverty_low + int(education <= 2) + int(age >= 60),
+            "phys_health_risk_score": obese + int(bmi >= 35) + underweight + inactive,
             # Interactions
-            "inactive_x_poor_sleep": int(met_min_week == 0) * int(sleep_hours < 6),
-            "poverty_x_inactive": int(poverty_ratio < 1.0) * int(met_min_week == 0),
-            "age_x_poverty": age * int(poverty_ratio < 1.0),
+            "inactive_x_poor_sleep": inactive * short_sleep,
+            "sleep_activity_risk": sleep_trouble_flag * inactive,
+            "poverty_x_inactive": poverty_low * inactive,
+            "poverty_x_sleep_trouble": poverty_low * sleep_trouble_flag,
+            "age_x_poverty": age * poverty_low,
         }
 
         return pd.DataFrame([row])[self.feature_cols]
@@ -207,6 +274,70 @@ class RiskPredictor:
 
         return None
 
+    def _get_model_feature_names(self) -> list:
+        """Return feature names aligned to the fitted estimator after selection."""
+        explainability_model = self._get_explainability_model()
+        feature_names = np.array(self.feature_cols)
+        if explainability_model is None:
+            return feature_names.tolist()
+
+        selector = explainability_model.named_steps.get("selector")
+        if selector is not None:
+            feature_names = feature_names[selector.get_support()]
+        return feature_names.tolist()
+
+    def _get_top_factors(self, X: pd.DataFrame) -> list:
+        """Return top per-prediction factors for tree or linear deployment models."""
+        explainability_model = self._get_explainability_model()
+        clf = (
+            explainability_model.named_steps["clf"]
+            if explainability_model is not None
+            else None
+        )
+        if clf is None:
+            return []
+
+        model_feature_names = self._get_model_feature_names()
+
+        if hasattr(clf, "feature_importances_"):
+            importances = pd.Series(
+                clf.feature_importances_, index=model_feature_names
+            )
+            top_features = importances.nlargest(5)
+            return [
+                {
+                    "feature": feat,
+                    "importance": round(float(imp), 4),
+                    "value": round(float(X[feat].values[0]), 3),
+                }
+                for feat, imp in top_features.items()
+            ]
+
+        if hasattr(clf, "coef_"):
+            transformed_X = X
+            scaler = explainability_model.named_steps.get("scaler")
+            if scaler is not None:
+                transformed_X = scaler.transform(X)
+
+            contributions = clf.coef_.ravel() * np.asarray(transformed_X)[0]
+            contribution_series = pd.Series(contributions, index=model_feature_names)
+            top_features = contribution_series.abs().nlargest(5).index
+            return [
+                {
+                    "feature": feat,
+                    "importance": round(float(abs(contribution_series[feat])), 4),
+                    "value": round(float(X[feat].values[0]), 3),
+                    "direction": (
+                        "increase_risk"
+                        if contribution_series[feat] >= 0
+                        else "decrease_risk"
+                    ),
+                }
+                for feat in top_features
+            ]
+
+        return []
+
     def predict(self, inputs: dict) -> dict:
         """
         Score a single individual and return structured output.
@@ -216,7 +347,14 @@ class RiskPredictor:
         inputs : dict
             Keys: age, sex_female, poverty_ratio, met_min_week,
                   sleep_hours, sleep_trouble, bmi, drinks_per_week,
-                  education, race_eth
+                  education, race_eth. Optional extended keys include
+                  marital_status, born_us, sedentary_minutes,
+                  sleep_apnea_symptom_freq, daytime_sleepiness_freq,
+                  ever_smoked_100_cigs, current_smoking_status,
+                  days_smoked_past_month, cigs_per_day_smoking_days,
+                  quit_attempt_last_year, general_health,
+                  healthcare_visits_code, hospitalized_last_year,
+                  routine_care_place, insurance_gap_last_year, insured.
 
         Returns
         -------
@@ -232,35 +370,15 @@ class RiskPredictor:
         X = self._build_feature_row(inputs)
         prob = float(self.model.predict_proba(X)[0][1])
         label, color = self.get_severity_label(prob)
-        # This threshold was calibrated on the precision-recall curve to maximize F1.
+        # This threshold was calibrated on the precision-recall curve to maximize
+        # F1 while preserving at least 0.70 recall for screening use.
         binary_prediction = int(prob >= self.threshold)
         above_decision_threshold = bool(binary_prediction)
 
         # Rough PHQ-9 score estimate (linear scaling — not a clinical tool)
         phq9_estimate = round(prob * 27, 1)
 
-        # Top risk factors from feature importances
-        explainability_model = self._get_explainability_model()
-        clf = (
-            explainability_model.named_steps["clf"]
-            if explainability_model is not None
-            else None
-        )
-        if clf is not None and hasattr(clf, "feature_importances_"):
-            importances = pd.Series(
-                clf.feature_importances_, index=self.feature_cols
-            )
-            top_features = importances.nlargest(5)
-            top_factors = [
-                {
-                    "feature": feat,
-                    "importance": round(float(imp), 4),
-                    "value": round(float(X[feat].values[0]), 3),
-                }
-                for feat, imp in top_features.items()
-            ]
-        else:
-            top_factors = []
+        top_factors = self._get_top_factors(X)
 
         return {
             "risk_score": round(prob, 4),

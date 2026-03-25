@@ -1,4 +1,4 @@
-Model,AUC-ROC (mean),AUC-ROC (std),F1 (mean),Precision (mean),Recall (mean)
-Logistic Regression,0.7724,0.0099,0.3136,0.2042,0.677
-Random Forest,0.7459,0.013,0.2392,0.1401,0.8213
-XGBoost,0.7449,0.011,0.2292,0.2834,0.1934
+Model,AUC-ROC (mean),AUC-ROC (std),F1 (mean),Precision (mean),Recall (mean),GridSearch F1 (best)
+Logistic Regression,0.8348,0.0051,0.372,0.2478,0.7475,
+Random Forest,0.8215,0.0073,0.3715,0.2542,0.6918,0.3715
+XGBoost,0.8156,0.0124,0.3296,0.3781,0.2934,

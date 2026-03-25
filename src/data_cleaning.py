@@ -8,6 +8,8 @@ Epidemiological decisions made here (all documented):
   - PHQ-9 coding: NHANES codes 7 (refused) and 9 (don't know) set to NaN
   - Income: use poverty-income ratio (PIR) as continuous variable
   - Physical activity: compute total MET-minutes/week from vigorous + moderate + walk
+  - Add smoking, general-health, and insurance variables because they add
+    stronger non-lifestyle signal than threshold tuning alone
   - Missing data strategy: mean imputation for continuous, mode for categorical
     (a more sophisticated study would use multiple imputation — see ROADMAP.md)
 
@@ -81,6 +83,8 @@ def clean_demographics(df: pd.DataFrame) -> pd.DataFrame:
     # Age: RIDAGEYR is exact age in years — exclude under 18
     df = df[df["RIDAGEYR"] >= 18].copy()
 
+    df = df.replace(NHANES_MISSING_CODES, np.nan)
+
     # Rename for clarity
     df = df.rename(columns={
         "RIDAGEYR": "age",
@@ -89,7 +93,9 @@ def clean_demographics(df: pd.DataFrame) -> pd.DataFrame:
                                     # 3=Non-Hispanic White, 4=Non-Hispanic Black,
                                     # 6=Non-Hispanic Asian, 7=Other/Multi
         "DMDEDUC2": "education",    # 1=<9th grade ... 5=college+
-        "INDFMPIR": "poverty_ratio" # Poverty income ratio (continuous)
+        "INDFMPIR": "poverty_ratio", # Poverty income ratio (continuous)
+        "DMDMARTZ": "marital_status",
+        "DMDBORN4": "born_us",
     })
 
     # Exclude pregnant participants (RIDEXPRG == 1)
@@ -105,7 +111,18 @@ def clean_demographics(df: pd.DataFrame) -> pd.DataFrame:
     # Poverty ratio: cap at 5.0 (top-coded by NHANES), floor at 0
     df["poverty_ratio"] = df["poverty_ratio"].clip(0, 5.0)
 
-    return df[["SEQN", "age", "sex_female", "race_eth", "education", "poverty_ratio"]]
+    return df[
+        [
+            "SEQN",
+            "age",
+            "sex_female",
+            "race_eth",
+            "education",
+            "poverty_ratio",
+            "marital_status",
+            "born_us",
+        ]
+    ]
 
 
 def clean_physical_activity(df: pd.DataFrame) -> pd.DataFrame:
@@ -148,7 +165,9 @@ def clean_physical_activity(df: pd.DataFrame) -> pd.DataFrame:
         labels=["inactive", "insufficient", "sufficient", "highly_active"],
     )
 
-    return df[["SEQN", "met_min_week", "activity_category"]]
+    df["sedentary_minutes"] = pd.to_numeric(df.get("PAD680"), errors="coerce")
+
+    return df[["SEQN", "met_min_week", "activity_category", "sedentary_minutes"]]
 
 
 def clean_sleep(df: pd.DataFrame) -> pd.DataFrame:
@@ -167,8 +186,18 @@ def clean_sleep(df: pd.DataFrame) -> pd.DataFrame:
 
     # Sleep trouble (binary): SLQ050 == 1 (yes)
     df["sleep_trouble"] = (df.get("SLQ050", pd.Series(2, index=df.index)) == 1).astype(int)
+    df["sleep_apnea_symptom_freq"] = pd.to_numeric(df.get("SLQ040"), errors="coerce")
+    df["daytime_sleepiness_freq"] = pd.to_numeric(df.get("SLQ120"), errors="coerce")
 
-    return df[["SEQN", "sleep_hours_avg", "sleep_trouble"]]
+    return df[
+        [
+            "SEQN",
+            "sleep_hours_avg",
+            "sleep_trouble",
+            "sleep_apnea_symptom_freq",
+            "daytime_sleepiness_freq",
+        ]
+    ]
 
 
 def clean_bmi(df: pd.DataFrame) -> pd.DataFrame:
@@ -208,6 +237,70 @@ def clean_alcohol(df: pd.DataFrame) -> pd.DataFrame:
     return df[["SEQN", "drinks_per_day", "drink_frequency", "drinks_per_week_est"]]
 
 
+def clean_smoking(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Clean SMQ_J smoking file.
+    Includes ever-smoking, current smoking, smoking intensity, and quit attempts.
+    """
+    df = df.copy()
+    df = df.replace([777, 999, *NHANES_MISSING_CODES], np.nan)
+
+    df["ever_smoked_100_cigs"] = (df.get("SMQ020", pd.Series(2, index=df.index)) == 1).astype(int)
+    df["current_smoking_status"] = pd.to_numeric(df.get("SMQ040"), errors="coerce")
+    df["days_smoked_past_month"] = pd.to_numeric(df.get("SMD641"), errors="coerce")
+    df["cigs_per_day_smoking_days"] = pd.to_numeric(df.get("SMD650"), errors="coerce")
+    df["quit_attempt_last_year"] = (df.get("SMQ670", pd.Series(2, index=df.index)) == 1).astype(int)
+
+    return df[
+        [
+            "SEQN",
+            "ever_smoked_100_cigs",
+            "current_smoking_status",
+            "days_smoked_past_month",
+            "cigs_per_day_smoking_days",
+            "quit_attempt_last_year",
+        ]
+    ]
+
+
+def clean_healthcare(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Clean HUQ_J healthcare utilization file.
+    Includes general self-rated health, visit frequency, and hospitalization.
+    """
+    df = df.copy()
+    df = df.replace(NHANES_MISSING_CODES, np.nan)
+
+    df["general_health"] = pd.to_numeric(df.get("HUQ010"), errors="coerce")
+    df["routine_care_place"] = pd.to_numeric(df.get("HUQ030"), errors="coerce")
+    df["healthcare_visits_code"] = pd.to_numeric(df.get("HUQ051"), errors="coerce")
+    df["hospitalized_last_year"] = (df.get("HUQ071", pd.Series(2, index=df.index)) == 1).astype(int)
+
+    return df[
+        [
+            "SEQN",
+            "general_health",
+            "routine_care_place",
+            "healthcare_visits_code",
+            "hospitalized_last_year",
+        ]
+    ]
+
+
+def clean_insurance(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Clean HIQ_J insurance file.
+    Includes coverage and any gap in insurance during the past year.
+    """
+    df = df.copy()
+    df = df.replace(NHANES_MISSING_CODES, np.nan)
+
+    df["insured"] = (df.get("HIQ011", pd.Series(2, index=df.index)) == 1).astype(int)
+    df["insurance_gap_last_year"] = (df.get("HIQ210", pd.Series(2, index=df.index)) == 1).astype(int)
+
+    return df[["SEQN", "insured", "insurance_gap_last_year"]]
+
+
 def impute_missing(df: pd.DataFrame) -> pd.DataFrame:
     """
     Simple mean/mode imputation for remaining missing values.
@@ -217,9 +310,13 @@ def impute_missing(df: pd.DataFrame) -> pd.DataFrame:
     continuous_cols = [
         "age", "poverty_ratio", "met_min_week",
         "sleep_hours_avg", "bmi", "drinks_per_day",
-        "drinks_per_week_est", "drink_frequency"
+        "drinks_per_week_est", "drink_frequency", "sedentary_minutes",
+        "sleep_apnea_symptom_freq", "daytime_sleepiness_freq",
+        "current_smoking_status", "days_smoked_past_month",
+        "cigs_per_day_smoking_days", "general_health", "routine_care_place",
+        "healthcare_visits_code",
     ]
-    categorical_cols = ["education", "race_eth"]
+    categorical_cols = ["education", "race_eth", "marital_status", "born_us"]
 
     for col in continuous_cols:
         if col in df.columns:
@@ -241,6 +338,9 @@ def main():
     slq = load_xpt("P_SLQ.XPT")
     bmx = load_xpt("P_BMX.XPT")
     alq = load_xpt("P_ALQ.XPT")
+    smq = load_xpt("P_SMQ.XPT")
+    huq = load_xpt("P_HUQ.XPT")
+    hiq = load_xpt("P_HIQ.XPT")
 
     print("Cleaning individual files...")
     phq_clean = clean_phq9(dpq)
@@ -249,10 +349,22 @@ def main():
     sleep_clean = clean_sleep(slq)
     bmi_clean = clean_bmi(bmx)
     alc_clean = clean_alcohol(alq)
+    smoking_clean = clean_smoking(smq)
+    healthcare_clean = clean_healthcare(huq)
+    insurance_clean = clean_insurance(hiq)
 
     print("Merging on SEQN (participant ID)...")
     df = demo_clean.copy()
-    for other in [phq_clean, pa_clean, sleep_clean, bmi_clean, alc_clean]:
+    for other in [
+        phq_clean,
+        pa_clean,
+        sleep_clean,
+        bmi_clean,
+        alc_clean,
+        smoking_clean,
+        healthcare_clean,
+        insurance_clean,
+    ]:
         df = df.merge(other, on="SEQN", how="left")
 
     # Drop participants with no PHQ-9 score (primary outcome missing)

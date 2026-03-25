@@ -4,7 +4,7 @@
 
 - Project: Open Health Risk Engine
 - Model artifact: `models/best_model.joblib`
-- Current deployed model family: Cross-validation F1-selected classifier (latest run: Logistic Regression)
+- Current deployed model family: Logistic Regression selected by recall-protected tuned F1
 - Current model interface: `src/predict_risk.py`
 - Current public UI: `dashboard/live_app.py`
 - Document date: March 25, 2026
@@ -56,9 +56,11 @@ These are expanded into engineered features covering:
 - sleep
 - BMI
 - alcohol use
+- smoking
+- healthcare access and self-rated health
 - interaction terms
 
-The current engineered feature set contains 30 model features.
+The current engineered feature set contains 63 model features.
 
 ## Outputs
 
@@ -70,12 +72,12 @@ The current engineered feature set contains 30 model features.
 - `phq9_estimate`: UI-oriented heuristic equal to `risk_score * 27`
 - `decision_threshold`: binary operating threshold loaded from `models/optimal_threshold.json` at inference time
 - `above_decision_threshold`: whether `risk_score >= decision_threshold`
-- `top_factors`: top feature-importance entries when the underlying estimator exposes them
+- `top_factors`: top feature signals from tree importances or per-prediction linear contributions
 
 Important notes:
 
 - `phq9_estimate` is not a calibrated predicted PHQ-9 score.
-- `top_factors` are only available for models that expose feature importances and do not represent causal effects.
+- `top_factors` are directional model signals, not causal effects.
 - `above_decision_threshold` is a demo operating-point indicator, not a clinical recommendation.
 
 ## Probability Bands Used In The UI
@@ -94,13 +96,13 @@ model can look acceptable on overall accuracy while still underperforming on
 the cases that matter most for screening-oriented use.
 
 - SMOTE is applied inside the Random Forest training pipeline to oversample the minority class on training folds only.
-- The Random Forest uses `class_weight = {0: 1, 1: 5}` to penalize missed depressed cases more heavily than false alarms.
-- Threshold tuning is applied after training by maximizing F1 on the held-out precision-recall curve.
+- The Random Forest search uses heavier positive-class weights (`{0:1,1:4}` to `{0:1,1:6}`) to penalize missed depressed cases more heavily than false alarms.
+- Threshold tuning is applied after training by selecting the best F1 among thresholds that keep recall at or above 0.70 on the held-out precision-recall curve.
 
 | Stage | AUC | F1 | Recall | Precision |
 | --- | ---: | ---: | ---: | ---: |
 | Before imbalance fix | 0.76 | 0.33 | 0.56 | 0.23 |
-| After imbalance fix | TBD after retraining | TBD after retraining | TBD after retraining | TBD after retraining |
+| After expanded features + tuned threshold | 0.83 | 0.39 | 0.71 | 0.27 |
 
 ## Performance Snapshot
 
@@ -108,17 +110,17 @@ Latest `models/best_model.joblib` performance from the repo evaluation artifacts
 
 | Metric | Latest best model |
 | --- | ---: |
-| 5-fold CV AUC-ROC (mean) | 0.7724 |
-| 5-fold CV F1 (mean) | 0.3136 |
-| 5-fold CV Precision (mean) | 0.2042 |
-| 5-fold CV Recall (mean) | 0.6770 |
-| Test AUC-ROC | 0.7811 |
-| Test F1 | 0.3242 |
-| Test Precision | 0.2110 |
-| Test Recall | 0.6993 |
-| Test Brier Score | 0.1889 |
-| Tuned-threshold Test F1 | 0.3773 |
-| Tuned threshold | 0.6992 |
+| 5-fold CV AUC-ROC (mean) | 0.8348 |
+| 5-fold CV F1 (mean) | 0.3720 |
+| 5-fold CV Precision (mean) | 0.2478 |
+| 5-fold CV Recall (mean) | 0.7475 |
+| Test AUC-ROC | 0.8280 |
+| Test F1 | 0.3696 |
+| Test Precision | 0.2472 |
+| Test Recall | 0.7320 |
+| Test Brier Score | 0.1615 |
+| Tuned-threshold Test F1 | 0.3871 |
+| Tuned threshold | 0.5403 |
 
 See [VALIDATION_REPORT.md](VALIDATION_REPORT.md) for model comparison and
 interpretation.
