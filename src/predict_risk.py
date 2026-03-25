@@ -25,6 +25,8 @@ Example usage:
     print(result)
 """
 
+import json
+import os
 import joblib
 import numpy as np
 import pandas as pd
@@ -32,6 +34,57 @@ from pathlib import Path
 from typing import Union
 
 MODELS_DIR = Path(__file__).resolve().parent.parent / "models"
+DEFAULT_MODEL_FILENAME = "best_model.joblib"
+FALLBACK_OPTIMAL_THRESHOLD = 0.35
+OPTIMAL_THRESHOLD_PATH = MODELS_DIR / "optimal_threshold.json"
+
+
+def resolve_model_path(model_path: Union[str, Path, None] = None) -> Path:
+    """Resolve the inference artifact path from an explicit value or env vars."""
+    if model_path is not None:
+        return Path(model_path)
+
+    configured_path = os.getenv("OHRE_MODEL_PATH", "").strip()
+    if configured_path:
+        return Path(configured_path).expanduser()
+
+    filename = os.getenv("OHRE_MODEL_FILENAME", DEFAULT_MODEL_FILENAME).strip()
+    if not filename:
+        filename = DEFAULT_MODEL_FILENAME
+    return MODELS_DIR / filename
+
+
+def load_optimal_threshold() -> float:
+    """Load the tuned threshold from disk or return the requested fallback."""
+    if OPTIMAL_THRESHOLD_PATH.exists():
+        with open(OPTIMAL_THRESHOLD_PATH, encoding="utf-8") as f:
+            payload = json.load(f)
+        threshold = float(payload["optimal_threshold"])
+        if not 0.0 <= threshold <= 1.0:
+            raise ValueError(
+                "optimal_threshold in optimal_threshold.json must be between 0.0 and 1.0"
+            )
+        return threshold
+
+    print(
+        "optimal_threshold.json not found, using fallback 0.35 \u2014 retrain model to generate it."
+    )
+    return FALLBACK_OPTIMAL_THRESHOLD
+
+
+def resolve_decision_threshold(decision_threshold: float | None = None) -> float:
+    """Resolve and validate explicit threshold overrides for non-default callers."""
+    if decision_threshold is None:
+        env_threshold = os.getenv("OHRE_DECISION_THRESHOLD", "").strip()
+        if env_threshold:
+            decision_threshold = float(env_threshold)
+        else:
+            decision_threshold = load_optimal_threshold()
+
+    threshold = float(decision_threshold)
+    if not 0.0 <= threshold <= 1.0:
+        raise ValueError("decision_threshold must be between 0.0 and 1.0")
+    return threshold
 
 
 class RiskPredictor:
@@ -48,11 +101,15 @@ class RiskPredictor:
         (0.8, 1.0): ("Very high risk", "darkred"),
     }
 
-    def __init__(self, model_path: Union[str, Path] = None):
-        model_path = model_path or MODELS_DIR / "best_model.joblib"
+    def __init__(
+        self,
+        model_path: Union[str, Path, None] = None,
+        decision_threshold: float | None = None,
+    ):
+        model_path = resolve_model_path(model_path)
         feat_path = MODELS_DIR / "feature_cols.joblib"
 
-        if not Path(model_path).exists():
+        if not model_path.exists():
             raise FileNotFoundError(
                 f"Model not found at {model_path}. Run train_model.py first."
             )
@@ -61,6 +118,9 @@ class RiskPredictor:
                 f"Feature column artifact not found at {feat_path}. Run train_model.py first."
             )
 
+        self.model_path = model_path
+        self.threshold = resolve_decision_threshold(decision_threshold)
+        self.decision_threshold = self.threshold
         self.model = joblib.load(model_path)
         self.feature_cols = joblib.load(feat_path)
 
@@ -130,6 +190,23 @@ class RiskPredictor:
                 return label, color
         return "Very high risk", "darkred"
 
+    def _get_explainability_model(self):
+        """Return a fitted pipeline that exposes feature importances when available."""
+        if hasattr(self.model, "named_steps"):
+            return self.model
+
+        estimator = getattr(self.model, "estimator", None)
+        if estimator is not None and hasattr(estimator, "named_steps"):
+            return estimator
+
+        calibrated_classifiers = getattr(self.model, "calibrated_classifiers_", [])
+        if calibrated_classifiers:
+            fold_estimator = getattr(calibrated_classifiers[0], "estimator", None)
+            if fold_estimator is not None and hasattr(fold_estimator, "named_steps"):
+                return fold_estimator
+
+        return None
+
     def predict(self, inputs: dict) -> dict:
         """
         Score a single individual and return structured output.
@@ -148,18 +225,28 @@ class RiskPredictor:
             risk_label    : str (e.g. "Moderate risk")
             risk_color    : str (for UI display)
             phq9_estimate : float (rough PHQ-9 score estimate)
+            decision_threshold : float (binary operating threshold)
+            above_decision_threshold : bool
             top_factors   : list of dicts with feature name + direction
         """
         X = self._build_feature_row(inputs)
         prob = float(self.model.predict_proba(X)[0][1])
         label, color = self.get_severity_label(prob)
+        # This threshold was calibrated on the precision-recall curve to maximize F1.
+        binary_prediction = int(prob >= self.threshold)
+        above_decision_threshold = bool(binary_prediction)
 
         # Rough PHQ-9 score estimate (linear scaling — not a clinical tool)
         phq9_estimate = round(prob * 27, 1)
 
         # Top risk factors from feature importances
-        clf = self.model.named_steps["clf"]
-        if hasattr(clf, "feature_importances_"):
+        explainability_model = self._get_explainability_model()
+        clf = (
+            explainability_model.named_steps["clf"]
+            if explainability_model is not None
+            else None
+        )
+        if clf is not None and hasattr(clf, "feature_importances_"):
             importances = pd.Series(
                 clf.feature_importances_, index=self.feature_cols
             )
@@ -180,6 +267,8 @@ class RiskPredictor:
             "risk_label": label,
             "risk_color": color,
             "phq9_estimate": phq9_estimate,
+            "decision_threshold": round(self.threshold, 4),
+            "above_decision_threshold": above_decision_threshold,
             "top_factors": top_factors,
         }
 

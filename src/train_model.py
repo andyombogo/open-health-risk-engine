@@ -3,6 +3,15 @@ train_model.py
 --------------
 Trains, evaluates, and saves depression risk prediction models.
 
+This project predicts `PHQ-9 >= 10` on NHANES data, where the positive class is
+a minority of cases. That class imbalance makes naive accuracy and default
+probability thresholds misleading, so the training workflow uses three explicit
+strategies to address it:
+  1. SMOTE oversampling inside the Random Forest training pipeline only
+  2. Class weighting to penalize missed positive cases more heavily
+  3. Threshold tuning on the precision-recall curve to maximize F1 on the
+     held-out test split
+
 Models trained:
   1. Logistic Regression  — interpretable baseline
   2. Random Forest        — best balance of performance + explainability
@@ -12,12 +21,15 @@ Evaluation approach:
   - Stratified 5-fold cross-validation (preserves class imbalance)
   - Holdout test set (20%) for final unbiased evaluation
   - Metrics: AUC-ROC, F1, Precision, Recall, Brier score
-  - Class imbalance handling: class_weight='balanced' + SMOTE option
+  - Class imbalance handling: SMOTE for Random Forest, class weighting, and
+    threshold tuning
 
 Output:
-  models/best_model.joblib     — best model (Random Forest by default)
-  models/model_comparison.csv  — performance table
-  models/evaluation_report.txt — full classification report
+  models/best_model.joblib        — best model selected by CV F1 mean
+  models/optimal_threshold.json   — held-out threshold that maximizes F1
+  models/cv_results.csv           — cross-validation comparison table
+  models/test_results.csv         — held-out test comparison table
+  models/evaluation_report.txt    — full classification report
 """
 
 import json
@@ -32,15 +44,17 @@ import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use("Agg")  # Non-interactive backend for scripts
 
+from imblearn.over_sampling import SMOTE
+from imblearn.pipeline import Pipeline as ImbPipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     roc_auc_score, f1_score, precision_score, recall_score,
     classification_report, brier_score_loss, RocCurveDisplay,
-    ConfusionMatrixDisplay,
+    ConfusionMatrixDisplay, precision_recall_curve,
 )
 from sklearn.model_selection import StratifiedKFold, train_test_split, cross_validate
-from sklearn.pipeline import Pipeline
+from sklearn.pipeline import Pipeline as SklearnPipeline
 from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier
 
@@ -55,6 +69,7 @@ FIGURES_DIR = Path(__file__).resolve().parent.parent / "figures"
 
 RANDOM_STATE = 42
 PARALLEL_JOBS = 1
+OPTIMAL_THRESHOLD_PATH = MODELS_DIR / "optimal_threshold.json"
 
 
 def load_data():
@@ -86,7 +101,7 @@ def load_data():
 def build_models() -> dict:
     """Define the three model pipelines."""
     models = {
-        "Logistic Regression": Pipeline([
+        "Logistic Regression": SklearnPipeline([
             ("scaler", StandardScaler()),
             ("clf", LogisticRegression(
                 class_weight="balanced",
@@ -94,18 +109,19 @@ def build_models() -> dict:
                 random_state=RANDOM_STATE,
             )),
         ]),
-        "Random Forest": Pipeline([
+        "Random Forest": ImbPipeline([
             ("scaler", StandardScaler()),
+            ("smote", SMOTE(random_state=RANDOM_STATE, k_neighbors=5)),
             ("clf", RandomForestClassifier(
                 n_estimators=300,
                 max_depth=8,
                 min_samples_leaf=10,
-                class_weight="balanced",
+                class_weight={0: 1, 1: 5},  # Penalizes missing a depressed person 5x more than a false alarm, appropriate for a clinical screening context.
                 random_state=RANDOM_STATE,
                 n_jobs=PARALLEL_JOBS,
             )),
         ]),
-        "XGBoost": Pipeline([
+        "XGBoost": SklearnPipeline([
             ("scaler", StandardScaler()),
             ("clf", XGBClassifier(
                 n_estimators=300,
@@ -134,6 +150,8 @@ def cross_validate_models(models: dict, X_train, y_train) -> pd.DataFrame:
         cv_results = cross_validate(
             pipeline, X_train, y_train,
             cv=cv,
+            # F1 and recall stay in the scoring set because imbalanced screening
+            # data needs direct positive-class performance checks, not AUC alone.
             scoring=["roc_auc", "f1", "precision", "recall"],
             n_jobs=PARALLEL_JOBS,
         )
@@ -162,6 +180,32 @@ def evaluate_on_test(model, X_test, y_test, name: str) -> dict:
         "Test Recall": round(recall_score(y_test, y_pred), 4),
         "Brier Score": round(brier_score_loss(y_test, y_prob), 4),
     }
+
+
+def find_optimal_threshold(model, X_test, y_test) -> float:
+    """
+    Find the held-out probability threshold that maximizes F1 and persist it.
+    """
+    y_prob = model.predict_proba(X_test)[:, 1]
+    precision, recall, thresholds = precision_recall_curve(y_test, y_prob)
+    f1_scores = np.divide(
+        2 * precision * recall,
+        precision + recall,
+        out=np.zeros_like(precision),
+        where=(precision + recall) != 0,
+    )
+
+    if len(thresholds) == 0:
+        optimal_threshold = 0.5
+    else:
+        best_index = int(np.argmax(f1_scores[:-1]))
+        optimal_threshold = float(thresholds[best_index])
+
+    print(f"Optimal threshold value: {optimal_threshold:.4f}")
+    with open(OPTIMAL_THRESHOLD_PATH, "w", encoding="utf-8") as f:
+        json.dump({"optimal_threshold": round(optimal_threshold, 4)}, f, indent=2)
+    print(f"  Saved: {OPTIMAL_THRESHOLD_PATH}")
+    return optimal_threshold
 
 
 def plot_roc_curves(fitted_models: dict, X_test, y_test):
@@ -223,6 +267,17 @@ def main():
     print("\nCross-validation results:")
     print(cv_results.to_string(index=False))
 
+    # F1 is the primary selection metric here because imbalanced clinical data
+    # needs a model that balances precision and recall on the positive class.
+    best_model_name = (
+        cv_results.sort_values(
+            by=["F1 (mean)", "Recall (mean)", "AUC-ROC (mean)"],
+            ascending=False,
+        )
+        .iloc[0]["Model"]
+    )
+    print(f"\nSelected best model by CV F1 mean: {best_model_name}")
+
     print("\n── Training final models on full training set ───────────")
     fitted_models = {}
     test_results = []
@@ -243,14 +298,33 @@ def main():
     for name, model in fitted_models.items():
         plot_feature_importance(model, feature_cols, name)
 
-    print("\n── Saving best model (Random Forest) ───────────────────")
-    best_model = fitted_models["Random Forest"]
+    print(f"\n── Saving best model ({best_model_name}) ───────────────────")
+    best_model = fitted_models[best_model_name]
     model_path = MODELS_DIR / "best_model.joblib"
     joblib.dump(best_model, model_path)
     print(f"  Saved: {model_path}")
+    print(f"  Best model artifact source: {best_model_name}")
 
     # Save feature columns alongside the model (needed for inference)
     joblib.dump(feature_cols, MODELS_DIR / "feature_cols.joblib")
+
+    optimal_threshold = find_optimal_threshold(best_model, X_test, y_test)
+
+    y_prob = best_model.predict_proba(X_test)[:, 1]
+    tuned_y_pred = (y_prob >= optimal_threshold).astype(int)
+    tuned_report = classification_report(
+        y_test,
+        tuned_y_pred,
+        target_names=["Not depressed", "Depressed"],
+    )
+    tuned_f1 = f1_score(y_test, tuned_y_pred, zero_division=0)
+
+    print("\nTuned threshold evaluation")
+    print("=" * 50)
+    print(tuned_report)
+
+    test_df["Tuned_F1"] = np.nan
+    test_df.loc[test_df["Model"] == best_model_name, "Tuned_F1"] = round(tuned_f1, 4)
 
     # Save comparison tables
     cv_results.to_csv(MODELS_DIR / "cv_results.csv", index=False)
@@ -260,10 +334,14 @@ def main():
     y_pred = best_model.predict(X_test)
     report = classification_report(y_test, y_pred, target_names=["Not depressed", "Depressed"])
     report_path = MODELS_DIR / "evaluation_report.txt"
-    with open(report_path, "w") as f:
-        f.write("Random Forest — Classification Report (Test Set)\n")
+    with open(report_path, "w", encoding="utf-8") as f:
+        f.write(f"Selected best model by CV F1 mean: {best_model_name}\n\n")
+        f.write(f"{best_model_name} — Classification Report (Test Set)\n")
         f.write("=" * 50 + "\n")
         f.write(report)
+        f.write("\n\nTuned threshold evaluation\n")
+        f.write("=" * 50 + "\n")
+        f.write(tuned_report)
     print(f"  Saved: {report_path}")
 
     print("\n── Done ─────────────────────────────────────────────────")

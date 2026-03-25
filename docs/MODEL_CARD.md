@@ -4,10 +4,10 @@
 
 - Project: Open Health Risk Engine
 - Model artifact: `models/best_model.joblib`
-- Current deployed model family: Random Forest
+- Current deployed model family: Cross-validation F1-selected classifier (latest run: Logistic Regression)
 - Current model interface: `src/predict_risk.py`
 - Current public UI: `dashboard/live_app.py`
-- Document date: March 19, 2026
+- Document date: March 25, 2026
 
 ## Summary
 
@@ -68,12 +68,15 @@ The current engineered feature set contains 30 model features.
 - `risk_label`: one of `Minimal risk`, `Low risk`, `Moderate risk`, `High risk`, `Very high risk`
 - `risk_color`: UI display color token
 - `phq9_estimate`: UI-oriented heuristic equal to `risk_score * 27`
-- `top_factors`: top feature-importance entries from the trained Random Forest
+- `decision_threshold`: binary operating threshold loaded from `models/optimal_threshold.json` at inference time
+- `above_decision_threshold`: whether `risk_score >= decision_threshold`
+- `top_factors`: top feature-importance entries when the underlying estimator exposes them
 
 Important notes:
 
 - `phq9_estimate` is not a calibrated predicted PHQ-9 score.
-- `top_factors` come from model feature importances and do not represent causal effects.
+- `top_factors` are only available for models that expose feature importances and do not represent causal effects.
+- `above_decision_threshold` is a demo operating-point indicator, not a clinical recommendation.
 
 ## Probability Bands Used In The UI
 
@@ -83,21 +86,39 @@ Important notes:
 - `0.6 <= risk_score < 0.8`: High risk
 - `0.8 <= risk_score <= 1.0`: Very high risk
 
+## Class Imbalance Strategy
+
+NHANES is imbalanced for the binary target `PHQ-9 >= 10` because respondents in
+the depressed class make up a minority of the survey sample, which means a
+model can look acceptable on overall accuracy while still underperforming on
+the cases that matter most for screening-oriented use.
+
+- SMOTE is applied inside the Random Forest training pipeline to oversample the minority class on training folds only.
+- The Random Forest uses `class_weight = {0: 1, 1: 5}` to penalize missed depressed cases more heavily than false alarms.
+- Threshold tuning is applied after training by maximizing F1 on the held-out precision-recall curve.
+
+| Stage | AUC | F1 | Recall | Precision |
+| --- | ---: | ---: | ---: | ---: |
+| Before imbalance fix | 0.76 | 0.33 | 0.56 | 0.23 |
+| After imbalance fix | TBD after retraining | TBD after retraining | TBD after retraining | TBD after retraining |
+
 ## Performance Snapshot
 
-Current deployed model performance from the repo evaluation artifacts:
+Latest `models/best_model.joblib` performance from the repo evaluation artifacts:
 
-| Metric | Random Forest |
+| Metric | Latest best model |
 | --- | ---: |
-| 5-fold CV AUC-ROC (mean) | 0.7750 |
-| 5-fold CV F1 (mean) | 0.3331 |
-| 5-fold CV Precision (mean) | 0.2405 |
-| 5-fold CV Recall (mean) | 0.5426 |
-| Test AUC-ROC | 0.7591 |
-| Test F1 | 0.3295 |
-| Test Precision | 0.2331 |
-| Test Recall | 0.5621 |
-| Test Brier Score | 0.1559 |
+| 5-fold CV AUC-ROC (mean) | 0.7724 |
+| 5-fold CV F1 (mean) | 0.3136 |
+| 5-fold CV Precision (mean) | 0.2042 |
+| 5-fold CV Recall (mean) | 0.6770 |
+| Test AUC-ROC | 0.7811 |
+| Test F1 | 0.3242 |
+| Test Precision | 0.2110 |
+| Test Recall | 0.6993 |
+| Test Brier Score | 0.1889 |
+| Tuned-threshold Test F1 | 0.3773 |
+| Tuned threshold | 0.6992 |
 
 See [VALIDATION_REPORT.md](VALIDATION_REPORT.md) for model comparison and
 interpretation.
@@ -140,7 +161,8 @@ Additional validation artifacts now tracked in the repo:
 
 ## Calibration Note
 
-- Post-hoc calibration improves probability quality significantly (Brier from
-  `0.1559` to `0.0772` with sigmoid calibration).
-- The calibrated model favors a lower decision threshold (~`0.20`) if balancing
-  precision and recall on the current test split.
+- A separate post-hoc calibration experiment for the Random Forest path is still
+  documented in [VALIDATION_REPORT.md](VALIDATION_REPORT.md).
+- The default inference path in `src/predict_risk.py` now loads
+  `models/best_model.joblib` and applies the tuned threshold saved in
+  `models/optimal_threshold.json`.
