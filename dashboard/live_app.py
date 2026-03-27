@@ -363,6 +363,8 @@ def score_inputs(inputs: dict) -> dict:
             "risk_label": "Unavailable",
             "risk_color": "gray",
             "phq9_estimate": 0.0,
+            "decision_threshold": 0.35,
+            "above_decision_threshold": False,
             "top_factors": [],
         }
     return predictor.predict(inputs)
@@ -548,6 +550,8 @@ def render_calculator():
         risk_label = result["risk_label"]
         risk_color = result["risk_color"]
         phq9_est = result["phq9_estimate"]
+        decision_threshold = result["decision_threshold"]
+        above_decision_threshold = result["above_decision_threshold"]
         top_factors = result["top_factors"]
 
         color_map = {
@@ -561,7 +565,7 @@ def render_calculator():
         hex_color = color_map.get(risk_color, "#64748b")
 
         st.markdown('<div class="score-shell">', unsafe_allow_html=True)
-        st.markdown('<div class="score-caption">Estimated Risk</div>', unsafe_allow_html=True)
+        st.markdown('<div class="score-caption">Risk Estimate</div>', unsafe_allow_html=True)
         st.markdown(
             f"""
 <div style="font-size:3.25rem; font-weight:800; color:{hex_color}; line-height:1; margin-top:0.35rem;">
@@ -571,6 +575,10 @@ def render_calculator():
     {risk_label}
 </div>
 <div style="font-size:0.95rem; color:#475569; margin-top:0.6rem;">
+    Operating threshold: <strong>{decision_threshold:.0%}</strong> |
+    <strong>{"Above" if above_decision_threshold else "Below"}</strong> threshold
+</div>
+<div style="font-size:0.95rem; color:#475569; margin-top:0.35rem;">
     Estimated PHQ-9 equivalent: <strong>{phq9_est}</strong>
 </div>
 """,
@@ -656,7 +664,8 @@ render_calculator()
 with st.expander("How to interpret this result"):
     st.markdown(
         """
-- This score estimates depression risk from lifestyle and demographic patterns seen in NHANES survey data.
+- This score is a probability estimate based on lifestyle and demographic patterns seen in NHANES survey data.
+- The binary threshold shown here is the current tuned screening cutoff loaded from the deployment artifacts, not a clinical action threshold.
 - It is designed as a portfolio demo and explainable ML example, not as a diagnostic tool.
 - Higher scores suggest a profile that looks more similar to the higher-risk patterns learned by the model.
 """
@@ -666,7 +675,8 @@ with st.expander("Model snapshot"):
     st.markdown(
         """
 - Dataset: NHANES 2017-March 2020 pre-pandemic
-- Deployment model: Random Forest
+- Deployment model: Logistic Regression
+- Operating threshold: tuned from `models/optimal_threshold.json`
 - Validation: 5-fold stratified cross-validation
 - Explainability: feature importance surfaced for the current estimate
 """

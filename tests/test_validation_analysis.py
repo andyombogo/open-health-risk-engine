@@ -49,6 +49,8 @@ def test_make_subgroup_metrics_includes_confidence_interval_columns():
         groups,
         y_true,
         y_prob,
+        threshold=0.2,
+        model_artifact="best_model.joblib",
         n_bootstrap=25,
         random_state=99,
     )
@@ -63,7 +65,11 @@ def test_make_subgroup_metrics_includes_confidence_interval_columns():
         "f1_ci_low",
         "f1_ci_high",
         "bootstrap_replicates",
+        "operating_threshold",
+        "model_artifact",
     }
 
     assert expected_columns.issubset(subgroup_metrics.columns)
     assert (subgroup_metrics["bootstrap_replicates"] == 25).all()
+    assert (subgroup_metrics["operating_threshold"] == 0.2).all()
+    assert (subgroup_metrics["model_artifact"] == "best_model.joblib").all()

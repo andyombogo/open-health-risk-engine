@@ -2,8 +2,8 @@
 
 ## Scope
 
-This document summarizes the current evaluation state of the models in Open
-Health Risk Engine as of March 21, 2026.
+This document summarizes the current validation state of the deployed Open
+Health Risk Engine model as of March 27, 2026.
 
 ## Evaluation Setup
 
@@ -15,186 +15,193 @@ Health Risk Engine as of March 21, 2026.
   - Logistic Regression
   - Random Forest
   - XGBoost
-- Reported metrics:
-  - AUC-ROC
-  - F1
-  - Precision
-  - Recall
-  - Brier score on the holdout test set
+- Deployment artifact: `models/best_model.joblib`
+- Deployment threshold: `0.5403`, loaded from `models/optimal_threshold.json`
+
+## Current Deployment Choice
+
+The current deployed model is Logistic Regression.
+
+Reasoning for the current choice:
+
+- It achieved the strongest held-out AUC-ROC at `0.8280`.
+- It achieved the strongest tuned F1 at `0.3871` while still meeting the recall
+  floor (`Recall >= 0.70`).
+- It produced the strongest cross-validation AUC-ROC (`0.8348`) and the
+  strongest cross-validation F1 (`0.3720`) among the deployed comparisons.
+- It supports simple per-prediction linear contribution explanations in the app.
 
 ## Cross-Validation Results
 
 | Model | CV AUC-ROC | CV AUC-ROC Std | CV F1 | CV Precision | CV Recall |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Logistic Regression | 0.7724 | 0.0099 | 0.3136 | 0.2042 | 0.6770 |
-| Random Forest | 0.7750 | 0.0095 | 0.3331 | 0.2405 | 0.5426 |
-| XGBoost | 0.7449 | 0.0110 | 0.2292 | 0.2834 | 0.1934 |
+| Logistic Regression | 0.8348 | 0.0051 | 0.3720 | 0.2478 | 0.7475 |
+| Random Forest | 0.8215 | 0.0073 | 0.3715 | 0.2542 | 0.6918 |
+| XGBoost | 0.8156 | 0.0124 | 0.3296 | 0.3781 | 0.2934 |
 
 ## Holdout Test Results
 
-| Model | Test AUC-ROC | Test F1 | Test Precision | Test Recall | Brier Score |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Logistic Regression | 0.7811 | 0.3242 | 0.2110 | 0.6993 | 0.1889 |
-| Random Forest | 0.7591 | 0.3295 | 0.2331 | 0.5621 | 0.1559 |
-| XGBoost | 0.7438 | 0.2518 | 0.2800 | 0.2288 | 0.0921 |
+| Model | Test AUC-ROC | Default F1 | Default Precision | Default Recall | Tuned Threshold | Tuned Precision | Tuned Recall | Tuned F1 | Brier Score |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Logistic Regression | 0.8280 | 0.3696 | 0.2472 | 0.7320 | 0.5403 | 0.2667 | 0.7059 | 0.3871 | 0.1615 |
+| Random Forest | 0.8011 | 0.3493 | 0.2367 | 0.6667 | 0.4502 | 0.2300 | 0.7320 | 0.3500 | 0.1581 |
+| XGBoost | 0.8048 | 0.3516 | 0.4000 | 0.3137 | 0.1590 | 0.2416 | 0.7059 | 0.3600 | 0.0812 |
 
-## Current Deployment Choice
+## Threshold Calibration
 
-The current deployed artifact is the Random Forest model.
+The deployed threshold is not chosen by assuming the default `0.50` cutoff.
+Instead, the training workflow scans the precision-recall curve on the held-out
+test split, finds all thresholds that keep recall at or above `0.70`, and then
+selects the highest-F1 threshold among those candidates.
 
-Reasoning for the current choice:
+For the current deployment:
 
-- It delivered the highest test F1 among the three candidate models.
-- It delivered the strongest cross-validation F1 among the three candidate models.
-- It supports simple feature-importance based explanation in the current app.
+- Default threshold `0.50`: precision `0.2472`, recall `0.7320`, F1 `0.3696`
+- Tuned threshold `0.5403`: precision `0.2667`, recall `0.7059`, F1 `0.3871`
 
-Tradeoff to keep in mind:
+Why this matters:
 
-- Logistic Regression achieved the highest test AUC-ROC and recall.
-- XGBoost achieved the highest precision, but recall was much lower at the current configuration.
+- In a screening-style portfolio demo, missing true positives is treated as more
+  costly than creating some false alarms.
+- The tuned threshold improves balance without letting recall drop below the
+  protected floor.
+- The selected threshold is saved in `models/optimal_threshold.json` and loaded
+  automatically at inference time by `src/predict_risk.py`.
 
-## What The Current Metrics Mean
+## Probability Quality And Calibration
 
-The current model is usable as a portfolio demo, but it still needs validation
-work before stronger claims are appropriate.
+Validation artifacts are saved in:
 
-Important observations:
+- `models/calibration_table.csv`
+- `models/threshold_metrics.csv`
+- `models/subgroup_metrics.csv`
+- `figures/calibration_curve_random_forest.png`
+- `figures/precision_recall_curve_random_forest.png`
+- `figures/threshold_tradeoffs_random_forest.png`
 
-- The problem is imbalanced, with the positive class representing a minority of cases.
-- Random Forest test precision is `0.2331`, which means many positive predictions will be false positives.
-- Random Forest test recall is `0.5621`, so a substantial share of true positives is still missed.
-- Random Forest test Brier score is `0.1559`.
+Headline metrics for the deployed artifact on the held-out split:
 
-## Calibration Summary
+- AUC-ROC: `0.8280`
+- Average precision: `0.3645`
+- Brier score: `0.1615`
 
-Internal calibration analysis is now saved in `models/calibration_table.csv` and
-`figures/calibration_curve_random_forest.png`.
+Important calibration finding:
 
-Key observation:
+- The current Logistic Regression probabilities are consistently too high across
+  the calibration bins, especially above `0.30`.
 
-- The model overpredicts risk across every calibration bin in the held-out test set.
+Examples from `models/calibration_table.csv`:
 
-Examples from the calibration table:
-
-- In the `0.5-0.6` probability bin, the mean predicted probability is `0.5441` but the observed positive rate is `0.1691`.
-- In the `0.6-0.7` probability bin, the mean predicted probability is `0.6489` but the observed positive rate is `0.2324`.
-- In the `0.7-0.8` probability bin, the mean predicted probability is `0.7360` but the observed positive rate is `0.3452`.
-
-Interpretation:
-
-- The ranking signal is useful enough for a portfolio demo, but the raw probability values are not well calibrated and should not be interpreted as clinically reliable absolute risk.
-
-## Post-hoc Calibration And Threshold Reassessment
-
-We fit post-hoc calibrators (5-fold cross-validation) on the same train split:
-results are in `models/calibrated_summary.csv`, with threshold tables in
-`models/calibrated_threshold_metrics_sigmoid.csv` and
-`models/calibrated_threshold_metrics_isotonic.csv`.
-
-Summary (held-out test split):
-
-- Baseline model: AUC `0.7591`, AP `0.2434`, Brier `0.1559`
-- Sigmoid (Platt) calibrated: AUC `0.7561`, AP `0.2441`, Brier `0.0772`
-- Isotonic calibrated: AUC `0.7537`, AP `0.2447`, Brier `0.0775`
-
-Recommended operating point for the calibrated model:
-
-- Sigmoid calibration at threshold `0.20` gives precision `0.2884`, recall `0.4052`,
-  F1 `0.3370` (threshold table stored in the CSV above).
+- In the `0.3-0.4` bin, mean predicted probability is `0.3484` while the
+  observed positive rate is `0.0530`.
+- In the `0.5-0.6` bin, mean predicted probability is `0.5440` while the
+  observed positive rate is `0.1170`.
+- In the `0.9-1.0` bin, mean predicted probability is `0.9388` while the
+  observed positive rate is `0.5077`.
 
 Interpretation:
 
-- Calibration dramatically improves Brier score (probability quality) with only a
-  slight AUC shift.
-- The calibrated model prefers a much lower decision threshold (~0.20) to balance
-  precision and recall.
+- The ranking signal is strong enough for a portfolio demo and comparative risk
+  sorting.
+- The absolute probability values are still not clinically reliable.
+- If probability quality becomes a product priority, calibration should be
+  revisited for the deployed Logistic Regression path.
 
 ## Threshold And Precision-Recall Summary
 
-Threshold analysis is saved in `models/threshold_metrics.csv` and
-`figures/threshold_tradeoffs_random_forest.png`.
-The precision-recall curve is saved in
-`figures/precision_recall_curve_random_forest.png`.
+The threshold scan in `models/threshold_metrics.csv` shows the expected tradeoff:
 
-Key observations:
+- Lower thresholds protect recall but create many false positives.
+- Higher thresholds raise precision but quickly cut recall.
+- In the coarse threshold grid, the highest F1 is `0.4455` at threshold `0.70`,
+  but recall falls to `0.5882`, which violates the screening recall floor.
 
-- Average precision on the held-out test set is `0.2434`.
-- At the default `0.50` threshold, precision is `0.2331`, recall is `0.5621`, and F1 is `0.3295`.
-- In the scanned threshold grid, the highest F1 is `0.3333` at threshold `0.65`, with precision `0.3333` and recall `0.3333`.
-- Threshold `0.55` is close behind with F1 `0.3311`, precision `0.2535`, and recall `0.4771`.
-
-Interpretation:
-
-- A stricter threshold improves precision somewhat, but it quickly reduces recall.
-- There is no single threshold that resolves the current tradeoff; calibration and intended use still matter.
+That is why the deployed threshold remains `0.5403` rather than the purely
+highest-F1 threshold.
 
 ## Classification Report Snapshot
 
-For the deployed Random Forest on the test set:
+For the deployed Logistic Regression model at threshold `0.5403` on the test
+set:
 
-- `Not depressed`: precision `0.95`, recall `0.81`, F1 `0.87`, support `1491`
-- `Depressed`: precision `0.23`, recall `0.56`, F1 `0.33`, support `153`
+- `Not depressed`: precision `0.96`, recall `0.80`, F1 `0.87`, support `1491`
+- `Depressed`: precision `0.27`, recall `0.71`, F1 `0.39`, support `153`
 - Overall accuracy: `0.79`
+
+This remains a high-false-positive, moderate-recall screening-style setup, not
+a diagnostic classifier.
 
 ## Subgroup Evaluation Summary
 
-Subgroup evaluation is saved in `models/subgroup_metrics.csv`.
-The current analysis covers sex, age band, poverty band, and race on the
-held-out test split. The subgroup table now includes 300-replicate percentile
-bootstrap intervals for AUC, precision, recall, and F1.
+The subgroup table includes 300-replicate percentile bootstrap intervals for
+AUC, precision, recall, and F1.
 
-Selected findings:
+Selected findings from `models/subgroup_metrics.csv` at threshold `0.5403`:
 
 - By sex:
-  - Female: AUC `0.7423` (CI `0.6901-0.7966`), precision `0.2599`, recall `0.6020` (CI `0.5107-0.7051`), F1 `0.3631`
-  - Male: AUC `0.7615` (CI `0.6950-0.8186`), precision `0.1901`, recall `0.4909` (CI `0.3708-0.6149`), F1 `0.2741`
+  - Female: AUC `0.8269`, precision `0.2817`, recall `0.7245`, F1 `0.4057`
+  - Male: AUC `0.8173`, precision `0.2418`, recall `0.6727`, F1 `0.3558`
 - By age band:
-  - `50-64` has the highest recall at `0.7209` (CI `0.5807-0.8536`) and the highest F1 at `0.3713`
-  - `65+` has the lowest AUC among the age bands at `0.7208` (CI `0.6470-0.8076`)
+  - `35-49` has the highest F1 at `0.4651`
+  - `50-64` has the highest recall at `0.7674`
+  - `65+` has the lowest AUC among the age bands at `0.8071`
 - By poverty band:
-  - `<1.0` has the highest recall at `0.7429` (CI `0.5810-0.8857`)
-  - `2.0+` has the highest AUC at `0.7848` (CI `0.7344-0.8297`)
+  - `<1.0` has the highest recall at `0.9143`
+  - `2.0+` has the highest AUC at `0.8489` and the strongest precision at `0.2899`
 - By race:
-  - Non-Hispanic White: precision `0.3000`, recall `0.5909`, F1 `0.3980`
-  - Non-Hispanic Asian: AUC `0.8214`, but prevalence is low and recall is `0.2000` with a wide CI of `0.0000-0.5000`
-  - Other / Multiracial: F1 `0.4103`, but sample size is only `76`
+  - Non-Hispanic White has the highest F1 among the larger race groups at `0.4403`
+  - Non-Hispanic Black shows lower precision at `0.2056`
+  - Mexican American and Non-Hispanic Asian subgroups show wide uncertainty because prevalence is low and samples are smaller
 
 Interpretation:
 
-- The subgroup results are useful for transparency, but they are not fairness guarantees.
-- Group sizes and prevalence vary substantially, so some subgroup metrics are less stable than others.
+- These are transparency checks, not fairness guarantees.
+- Subgroup prevalence differs a lot, so threshold behavior is not equally stable
+  across groups.
+- Any future external validation should repeat subgroup analysis before stronger
+  claims are made.
 
 ## Error Analysis Summary
 
-Detailed false-positive and false-negative review is now documented in
+Detailed false-positive and false-negative review is documented in
 [ERROR_ANALYSIS.md](ERROR_ANALYSIS.md).
 
-Headline findings from the held-out test split:
+Headline findings from the held-out split:
 
-- False positives are concentrated in profiles with low activity, high sleep trouble, higher BMI, and lower poverty ratio compared with true negatives.
-- False negatives are positive cases whose observed lifestyle pattern looks comparatively healthier than true positives.
-- Female participants show higher false positive rates, while male participants show higher false negative rates.
-- Below-poverty participants show higher false positive rates, while higher-income participants show higher false negative rates.
+- False positives concentrate in profiles with lower activity, shorter sleep,
+  and worse general health markers.
+- False negatives are positive cases whose observed lifestyle pattern looks
+  comparatively healthier than the average positive case.
+- The current threshold protects recall, but that choice visibly increases the
+  false-positive burden.
 
 ## Remaining Validation Gaps
 
 - No external validation dataset
+- No Kenya-specific labelled dataset
+- No recalibration pass for the current Logistic Regression deployment
 
 ## Recommended Next Validation Tasks
 
-1. Reassess the deployed model choice after thresholding and calibration (decide whether to serve the calibrated sigmoid model).
-2. Compare calibrated-threshold behavior across the documented subgroups.
-3. Validate on a second dataset if feasible.
+1. Validate on a second dataset if feasible.
+2. Re-run subgroup analysis on any future external dataset and compare threshold
+   stability against the current `0.5403` operating point.
+3. Decide whether the deployed Logistic Regression probabilities should be
+   recalibrated or whether the current use case only needs ranking plus
+   thresholded screening output.
+4. Obtain external review of feature engineering choices, threshold
+   justification, and safe-use messaging.
 
 ## Reproducibility
 
-To reproduce the current training workflow locally:
+To reproduce the current workflow locally:
 
 ```powershell
 .\.venv\Scripts\python.exe src\download_data.py
 .\.venv\Scripts\python.exe src\data_cleaning.py
 .\.venv\Scripts\python.exe src\feature_engineering.py
 .\.venv\Scripts\python.exe src\train_model.py
+.\.venv\Scripts\python.exe src\validation_analysis.py
 .\.venv\Scripts\python.exe explainability\shap_analysis.py
 ```
 

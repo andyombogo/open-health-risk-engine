@@ -1,5 +1,13 @@
 # Release Notes And Retraining Checklist
 
+## 2026-03-25 - v0.3.1
+
+### Highlights
+
+- added explicit operating-threshold metadata to prediction responses and health checks
+- updated the Streamlit calculator copy to explain the tuned screening threshold
+- aligned API and validation docs with the current deployment path
+
 ## 2026-03-21 - v0.3.0
 
 ### Highlights

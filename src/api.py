@@ -15,8 +15,12 @@ from typing import Annotated
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
 from pydantic import BaseModel, Field, field_validator
 
-from src.predict_risk import RiskPredictor
-from src.verify_runtime import REQUIRED_ARTIFACTS, find_missing_artifacts
+from src.predict_risk import (
+    RiskPredictor,
+    resolve_decision_threshold,
+    resolve_model_path,
+)
+from src.verify_runtime import find_missing_artifacts
 
 ROOT = Path(__file__).resolve().parent.parent
 LOG_DIR = ROOT / ".tmp"
@@ -99,6 +103,8 @@ class PredictResponse(BaseModel):
     risk_label: str
     risk_color: str
     phq9_estimate: float = Field(..., ge=0.0, le=27.0)
+    decision_threshold: float = Field(..., ge=0.0, le=1.0)
+    above_decision_threshold: bool
     top_factors: list[RiskFactorResponse]
 
 
@@ -110,6 +116,9 @@ class HealthResponse(BaseModel):
     missing_artifacts: list[str]
     auth_enabled: bool
     rate_limit_per_minute: int
+    model_artifact: str
+    decision_threshold: float = Field(..., ge=0.0, le=1.0)
+    calibrated_scores: bool
 
 
 @dataclass(frozen=True)
@@ -119,6 +128,8 @@ class APISettings:
     api_key: str | None
     rate_limit_per_minute: int
     request_log_path: Path | None
+    model_path: Path
+    decision_threshold: float
 
 
 class InMemoryRateLimiter:
@@ -151,6 +162,8 @@ def build_settings(
     api_key: str | None = None,
     rate_limit_per_minute: int | None = None,
     request_log_path: str | Path | None = None,
+    model_path: str | Path | None = None,
+    decision_threshold: float | None = None,
 ) -> APISettings:
     """Build runtime settings from overrides or environment variables."""
 
@@ -163,11 +176,15 @@ def build_settings(
     if request_log_path is None:
         env_log_path = os.getenv("OHRE_REQUEST_LOG_PATH", "").strip()
         request_log_path = Path(env_log_path) if env_log_path else None
+    resolved_model_path = resolve_model_path(model_path)
+    resolved_decision_threshold = resolve_decision_threshold(decision_threshold)
 
     return APISettings(
         api_key=api_key.strip() if api_key else None,
         rate_limit_per_minute=rate_limit_per_minute,
         request_log_path=Path(request_log_path) if request_log_path else None,
+        model_path=resolved_model_path,
+        decision_threshold=resolved_decision_threshold,
     )
 
 
@@ -196,11 +213,16 @@ def configure_logger(log_path: Path | None = None) -> logging.Logger:
     return logger
 
 
-@lru_cache(maxsize=1)
-def get_predictor() -> RiskPredictor:
+@lru_cache(maxsize=8)
+def get_predictor(
+    model_path: str | Path | None = None,
+    decision_threshold: float | None = None,
+) -> RiskPredictor:
     """Load the trained predictor or raise a service-level error."""
 
-    missing = find_missing_artifacts()
+    resolved_model_path = resolve_model_path(model_path)
+    resolved_decision_threshold = resolve_decision_threshold(decision_threshold)
+    missing = find_missing_artifacts(resolved_model_path)
     if missing:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -210,7 +232,10 @@ def get_predictor() -> RiskPredictor:
             ),
         )
     try:
-        return RiskPredictor()
+        return RiskPredictor(
+            model_path=resolved_model_path,
+            decision_threshold=resolved_decision_threshold,
+        )
     except FileNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -222,6 +247,8 @@ def create_app(
     api_key: str | None = None,
     rate_limit_per_minute: int | None = None,
     request_log_path: str | Path | None = None,
+    model_path: str | Path | None = None,
+    decision_threshold: float | None = None,
 ) -> FastAPI:
     """Create a configured FastAPI application instance."""
 
@@ -229,6 +256,8 @@ def create_app(
         api_key=api_key,
         rate_limit_per_minute=rate_limit_per_minute,
         request_log_path=request_log_path,
+        model_path=model_path,
+        decision_threshold=decision_threshold,
     )
     logger = configure_logger(settings.request_log_path)
     limiter = InMemoryRateLimiter(settings.rate_limit_per_minute)
@@ -286,13 +315,21 @@ def create_app(
 
     @app.get("/health", response_model=HealthResponse, tags=["meta"])
     def health() -> HealthResponse:
-        missing = [str(path.relative_to(ROOT)) for path in find_missing_artifacts()]
+        missing = []
+        for path in find_missing_artifacts(settings.model_path):
+            try:
+                missing.append(str(path.relative_to(ROOT)))
+            except ValueError:
+                missing.append(str(path))
         return HealthResponse(
             status="ok" if not missing else "degraded",
             model_loaded=not missing,
             missing_artifacts=missing,
             auth_enabled=bool(settings.api_key),
             rate_limit_per_minute=settings.rate_limit_per_minute,
+            model_artifact=settings.model_path.name,
+            decision_threshold=settings.decision_threshold,
+            calibrated_scores="calibrated" in settings.model_path.name,
         )
 
     @app.post(
@@ -302,7 +339,7 @@ def create_app(
         dependencies=[Depends(authorize_and_limit)],
     )
     def predict(payload: PredictRequest) -> PredictResponse:
-        predictor = get_predictor()
+        predictor = get_predictor(settings.model_path, settings.decision_threshold)
         result = predictor.predict(payload.model_dump())
         return PredictResponse(**result)
 

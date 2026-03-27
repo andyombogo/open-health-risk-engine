@@ -4,11 +4,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.predict_risk import RiskPredictor
+from src.predict_risk import RiskPredictor, resolve_model_path
 
 
 def test_risk_predictor_smoke():
     predictor = RiskPredictor()
+    assert predictor.model_path.name == resolve_model_path().name
 
     result = predictor.predict(
         {
@@ -29,6 +30,10 @@ def test_risk_predictor_smoke():
     assert isinstance(result["risk_label"], str) and result["risk_label"]
     assert isinstance(result["risk_color"], str) and result["risk_color"]
     assert 0.0 <= result["phq9_estimate"] <= 27.0
+    assert 0.0 <= result["decision_threshold"] <= 1.0
+    assert result["above_decision_threshold"] == (
+        result["risk_score"] >= result["decision_threshold"]
+    )
     assert isinstance(result["top_factors"], list)
     assert len(result["top_factors"]) > 0
 

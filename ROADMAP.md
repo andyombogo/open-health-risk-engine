@@ -42,6 +42,7 @@ research tracks.
 
 - [x] Add a model card covering intended use, limitations, metrics, and the non-clinical disclaimer
 - [x] Add calibration, threshold tuning, and precision-recall analysis for the deployed model
+- [x] Serve the selected deployment model in the live app and API, with explicit threshold messaging
 - [x] Add subgroup evaluation by sex, age band, and poverty band
 - [x] Add a short architecture diagram to README
 - [x] Add one demo GIF or screenshot walkthrough to README
@@ -50,7 +51,7 @@ research tracks.
 - [x] Fix repo hygiene issues such as encoding cleanup, `.gitignore` warnings, and doc consistency
 - [x] Add friendlier loading, empty-state, and failure-state handling in the live app
 - [x] Add mobile and accessibility polish for the calculator UI
-- [ ] Collect one round of external feedback and summarize what changed
+- [ ] Collect one round of external feedback and summarize what changed using `docs/EXTERNAL_FEEDBACK.md`
 
 ---
 

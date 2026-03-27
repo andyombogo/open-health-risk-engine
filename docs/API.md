@@ -48,6 +48,9 @@ Open the generated docs:
 - `OHRE_API_KEY`: required for protected `/predict` access
 - `OHRE_RATE_LIMIT_PER_MINUTE`: per-client request cap, default `60`
 - `OHRE_REQUEST_LOG_PATH`: optional file path for request logs
+- `OHRE_MODEL_FILENAME`: optional model filename inside `models/`, default `best_model.joblib`
+- `OHRE_MODEL_PATH`: optional full path override for the inference artifact
+- `OHRE_DECISION_THRESHOLD`: optional binary threshold override. If unset, the API loads `models/optimal_threshold.json` and falls back to `0.35` only if that file is missing.
 
 If `OHRE_API_KEY` is not set, the API still starts for local development, but
 authentication is effectively disabled. Set it before sharing the service.
@@ -101,6 +104,8 @@ curl -X POST "http://127.0.0.1:8000/predict" `
   "risk_label": "Low risk",
   "risk_color": "blue",
   "phq9_estimate": 9.4,
+  "decision_threshold": 0.5403,
+  "above_decision_threshold": false,
   "top_factors": [
     {
       "feature": "sleep_trouble",
@@ -118,7 +123,8 @@ curl -X POST "http://127.0.0.1:8000/predict" `
 
 ## Operational Notes
 
-- The API reuses the repo's trained model artifacts from `models/`
+- The API serves the current deployment artifact from `models/best_model.joblib` by default
+- The response includes both the predicted probability and the current binary operating threshold
 - Docker and Render builds now run `src/verify_runtime.py` to fail fast if
   required artifacts are missing
 - Request logging is enabled through FastAPI middleware and writes to stdout by

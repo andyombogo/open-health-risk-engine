@@ -7,6 +7,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from src.api import create_app
+from src.predict_risk import resolve_decision_threshold, resolve_model_path
 
 
 def make_client(rate_limit_per_minute: int = 5) -> TestClient:
@@ -43,6 +44,11 @@ def test_health_endpoint_reports_ready_state():
     assert payload["model_loaded"] is True
     assert payload["auth_enabled"] is True
     assert payload["missing_artifacts"] == []
+    expected_model_name = resolve_model_path().name
+    expected_threshold = round(resolve_decision_threshold(), 4)
+    assert payload["model_artifact"] == expected_model_name
+    assert payload["decision_threshold"] == expected_threshold
+    assert payload["calibrated_scores"] == ("calibrated" in expected_model_name)
 
 
 def test_predict_requires_api_key():
@@ -66,6 +72,10 @@ def test_predict_returns_structured_result():
     assert 0.0 <= payload["risk_score"] <= 1.0
     assert payload["risk_label"]
     assert 0.0 <= payload["phq9_estimate"] <= 27.0
+    assert 0.0 <= payload["decision_threshold"] <= 1.0
+    assert payload["above_decision_threshold"] == (
+        payload["risk_score"] >= payload["decision_threshold"]
+    )
     assert isinstance(payload["top_factors"], list)
 
 

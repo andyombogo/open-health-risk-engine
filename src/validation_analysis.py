@@ -15,6 +15,8 @@ Outputs:
 """
 
 from pathlib import Path
+import json
+import sys
 
 import joblib
 import matplotlib
@@ -36,6 +38,15 @@ from sklearn.metrics import (
 from sklearn.model_selection import train_test_split
 
 ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from src.predict_risk import (  # noqa: E402
+    DEFAULT_DECISION_THRESHOLD,
+    resolve_decision_threshold,
+    resolve_model_path,
+)
+
 PROCESSED_DIR = ROOT / "data" / "processed"
 MODELS_DIR = ROOT / "models"
 FIGURES_DIR = ROOT / "figures"
@@ -54,6 +65,33 @@ RACE_LABELS = {
 }
 
 
+def describe_model_artifact(model_path: Path) -> str:
+    """Return a human-readable label for the currently evaluated artifact."""
+    name = model_path.name.lower()
+    if name == "best_model.joblib":
+        threshold_path = MODELS_DIR / "optimal_threshold.json"
+        if threshold_path.exists():
+            try:
+                with open(threshold_path, encoding="utf-8") as handle:
+                    payload = json.load(handle)
+                model_name = str(payload.get("model_name", "")).strip()
+                if model_name:
+                    return model_name
+            except (OSError, ValueError, TypeError):
+                pass
+    if "logistic" in name:
+        return "Logistic Regression"
+    if "xgboost" in name or "xgb" in name:
+        return "XGBoost"
+    if "random_forest" in name or "forest" in name:
+        if "calibrated" in name:
+            return "Sigmoid-calibrated Random Forest"
+        return "Random Forest"
+    if "best_model" in name:
+        return "Current deployment model"
+    return model_path.stem.replace("_", " ").title()
+
+
 def safe_auc(y_true: pd.Series, y_prob: pd.Series) -> float:
     """Return ROC AUC if both classes are present, otherwise NaN."""
     if pd.Series(y_true).nunique() < 2:
@@ -62,7 +100,9 @@ def safe_auc(y_true: pd.Series, y_prob: pd.Series) -> float:
 
 
 def compute_binary_metrics(
-    y_true: pd.Series, y_prob: pd.Series, threshold: float = 0.5
+    y_true: pd.Series,
+    y_prob: pd.Series,
+    threshold: float = DEFAULT_DECISION_THRESHOLD,
 ) -> dict:
     """Compute core classification metrics from probabilities."""
     y_true = pd.Series(y_true).astype(int)
@@ -92,6 +132,7 @@ def percentile_interval(values: list[float], alpha: float = 0.05) -> tuple:
 
 def bootstrap_metric_intervals(
     group_df: pd.DataFrame,
+    threshold: float = DEFAULT_DECISION_THRESHOLD,
     n_bootstrap: int = BOOTSTRAP_REPLICATES,
     random_state: int = RANDOM_STATE,
 ) -> dict:
@@ -103,7 +144,11 @@ def bootstrap_metric_intervals(
     for _ in range(n_bootstrap):
         sampled_indices = rng.integers(0, len(group_df), len(group_df))
         sampled = group_df.iloc[sampled_indices]
-        sampled_metrics = compute_binary_metrics(sampled["y_true"], sampled["y_prob"])
+        sampled_metrics = compute_binary_metrics(
+            sampled["y_true"],
+            sampled["y_prob"],
+            threshold=threshold,
+        )
         for metric in tracked_metrics:
             bootstrap_values[metric].append(sampled_metrics[metric])
 
@@ -116,12 +161,13 @@ def bootstrap_metric_intervals(
     return intervals
 
 
-def load_validation_data():
+def load_validation_data(model_path: Path | None = None):
     """Load the feature matrix, subgroup fields, and fitted pipeline."""
     features = pd.read_csv(PROCESSED_DIR / "features.csv")
     nhanes = pd.read_csv(PROCESSED_DIR / "nhanes_clean.csv", usecols=["SEQN", "race_eth"])
     feature_cols = joblib.load(MODELS_DIR / "feature_cols.joblib")
-    model = joblib.load(MODELS_DIR / "best_model.joblib")
+    resolved_model_path = resolve_model_path(model_path)
+    model = joblib.load(resolved_model_path)
 
     frame = features.merge(nhanes, on="SEQN", how="left")
     X = frame[feature_cols]
@@ -180,6 +226,8 @@ def make_subgroup_metrics(
     groups: pd.DataFrame,
     y_true: pd.Series,
     y_prob: np.ndarray,
+    threshold: float = DEFAULT_DECISION_THRESHOLD,
+    model_artifact: str | None = None,
     n_bootstrap: int = BOOTSTRAP_REPLICATES,
     random_state: int = RANDOM_STATE,
 ) -> pd.DataFrame:
@@ -187,7 +235,7 @@ def make_subgroup_metrics(
     frame = groups.copy()
     frame["y_true"] = y_true.to_numpy()
     frame["y_prob"] = y_prob
-    frame["y_pred"] = (frame["y_prob"] >= 0.5).astype(int)
+    frame["y_pred"] = (frame["y_prob"] >= threshold).astype(int)
 
     frame["sex_group"] = np.where(frame["sex_female"] == 1, "Female", "Male")
     frame["age_band"] = pd.cut(
@@ -214,14 +262,21 @@ def make_subgroup_metrics(
 
     for subgroup_type, column in subgroup_specs:
         for subgroup_value, group_df in frame.groupby(column, observed=False):
-            point_metrics = compute_binary_metrics(group_df["y_true"], group_df["y_prob"])
+            point_metrics = compute_binary_metrics(
+                group_df["y_true"],
+                group_df["y_prob"],
+                threshold=threshold,
+            )
             bootstrap_intervals = bootstrap_metric_intervals(
                 group_df,
+                threshold=threshold,
                 n_bootstrap=n_bootstrap,
                 random_state=random_state + len(rows),
             )
             rows.append(
                 {
+                    "model_artifact": model_artifact or "",
+                    "operating_threshold": round(float(threshold), 4),
                     "subgroup_type": subgroup_type,
                     "subgroup": subgroup_value,
                     "n": int(len(group_df)),
@@ -245,7 +300,7 @@ def make_subgroup_metrics(
     return pd.DataFrame(rows)
 
 
-def plot_calibration(table: pd.DataFrame):
+def plot_calibration(table: pd.DataFrame, model_label: str):
     """Save a calibration curve figure."""
     fig, ax = plt.subplots(figsize=(6, 6))
     ax.plot(
@@ -261,9 +316,12 @@ def plot_calibration(table: pd.DataFrame):
         marker="o",
         color="#2563eb",
         linewidth=2,
-        label="Random Forest",
+        label=model_label,
     )
-    ax.set_title("Calibration Curve - Random Forest", fontweight="bold")
+    ax.set_title(
+        f"Calibration Curve - {model_label}",
+        fontweight="bold",
+    )
     ax.set_xlabel("Mean predicted probability")
     ax.set_ylabel("Observed positive rate")
     ax.grid(True, alpha=0.25)
@@ -276,7 +334,7 @@ def plot_calibration(table: pd.DataFrame):
     plt.close(fig)
 
 
-def plot_precision_recall(y_true: pd.Series, y_prob: np.ndarray):
+def plot_precision_recall(y_true: pd.Series, y_prob: np.ndarray, model_label: str):
     """Save a precision-recall curve figure."""
     precision, recall, _ = precision_recall_curve(y_true, y_prob)
     average_precision = average_precision_score(y_true, y_prob)
@@ -284,7 +342,10 @@ def plot_precision_recall(y_true: pd.Series, y_prob: np.ndarray):
     fig, ax = plt.subplots(figsize=(6.5, 5.5))
     ax.plot(recall, precision, color="#059669", linewidth=2)
     ax.set_title(
-        f"Precision-Recall Curve - Random Forest (AP={average_precision:.3f})",
+        (
+            "Precision-Recall Curve - "
+            f"{model_label} (AP={average_precision:.3f})"
+        ),
         fontweight="bold",
     )
     ax.set_xlabel("Recall")
@@ -298,7 +359,7 @@ def plot_precision_recall(y_true: pd.Series, y_prob: np.ndarray):
     plt.close(fig)
 
 
-def plot_threshold_tradeoffs(threshold_table: pd.DataFrame):
+def plot_threshold_tradeoffs(threshold_table: pd.DataFrame, model_label: str):
     """Save threshold-vs-metric tradeoffs for precision, recall, and F1."""
     fig, ax = plt.subplots(figsize=(7, 5))
     ax.plot(
@@ -322,7 +383,7 @@ def plot_threshold_tradeoffs(threshold_table: pd.DataFrame):
         color="#d97706",
         label="F1",
     )
-    ax.set_title("Threshold Tradeoffs - Random Forest", fontweight="bold")
+    ax.set_title(f"Threshold Tradeoffs - {model_label}", fontweight="bold")
     ax.set_xlabel("Probability threshold")
     ax.set_ylabel("Score")
     ax.set_ylim(0, 1)
@@ -340,7 +401,11 @@ def main():
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
 
-    model, X, y, groups = load_validation_data()
+    operating_threshold = resolve_decision_threshold()
+    model_path = resolve_model_path()
+    model_label = describe_model_artifact(model_path)
+
+    model, X, y, groups = load_validation_data(model_path)
     _, X_test, _, y_test, _, groups_test = train_test_split(
         X,
         y,
@@ -351,19 +416,25 @@ def main():
     )
 
     y_prob = model.predict_proba(X_test)[:, 1]
-    y_pred = (y_prob >= 0.5).astype(int)
+    y_pred = (y_prob >= operating_threshold).astype(int)
 
     calibration_table = make_calibration_table(y_test, y_prob)
     threshold_table = make_threshold_table(y_test, y_prob)
-    subgroup_metrics = make_subgroup_metrics(groups_test, y_test, y_prob)
+    subgroup_metrics = make_subgroup_metrics(
+        groups_test,
+        y_test,
+        y_prob,
+        threshold=operating_threshold,
+        model_artifact=model_path.name,
+    )
 
     calibration_table.to_csv(MODELS_DIR / "calibration_table.csv", index=False)
     threshold_table.to_csv(MODELS_DIR / "threshold_metrics.csv", index=False)
     subgroup_metrics.to_csv(MODELS_DIR / "subgroup_metrics.csv", index=False)
 
-    plot_calibration(calibration_table)
-    plot_precision_recall(y_test, y_prob)
-    plot_threshold_tradeoffs(threshold_table)
+    plot_calibration(calibration_table, model_label)
+    plot_precision_recall(y_test, y_prob, model_label)
+    plot_threshold_tradeoffs(threshold_table, model_label)
 
     print("Saved validation artifacts:")
     print(f"  {MODELS_DIR / 'calibration_table.csv'}")
@@ -372,13 +443,24 @@ def main():
     print(f"  {FIGURES_DIR / 'calibration_curve_random_forest.png'}")
     print(f"  {FIGURES_DIR / 'precision_recall_curve_random_forest.png'}")
     print(f"  {FIGURES_DIR / 'threshold_tradeoffs_random_forest.png'}")
+    print(f"\nModel artifact: {model_path.name}")
+    print(f"Operating threshold: {operating_threshold:.2f}")
     print("\nOverall metrics on held-out test split:")
     print(f"  AUC-ROC: {roc_auc_score(y_test, y_prob):.4f}")
     print(f"  Average precision: {average_precision_score(y_test, y_prob):.4f}")
     print(f"  Brier score: {brier_score_loss(y_test, y_prob):.4f}")
-    print(f"  Precision@0.50: {precision_score(y_test, y_pred, zero_division=0):.4f}")
-    print(f"  Recall@0.50: {recall_score(y_test, y_pred, zero_division=0):.4f}")
-    print(f"  F1@0.50: {f1_score(y_test, y_pred, zero_division=0):.4f}")
+    print(
+        f"  Precision@{operating_threshold:.2f}: "
+        f"{precision_score(y_test, y_pred, zero_division=0):.4f}"
+    )
+    print(
+        f"  Recall@{operating_threshold:.2f}: "
+        f"{recall_score(y_test, y_pred, zero_division=0):.4f}"
+    )
+    print(
+        f"  F1@{operating_threshold:.2f}: "
+        f"{f1_score(y_test, y_pred, zero_division=0):.4f}"
+    )
 
 
 if __name__ == "__main__":

@@ -4,17 +4,25 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from src.predict_risk import resolve_model_path
+
 ROOT = Path(__file__).resolve().parent.parent
 
-REQUIRED_ARTIFACTS = [
-    ROOT / "models" / "best_model.joblib",
-    ROOT / "models" / "feature_cols.joblib",
-]
+
+def get_required_artifacts(model_path: Path | None = None) -> list[Path]:
+    """Return the inference artifacts required by the deployed predictor."""
+    return [
+        resolve_model_path(model_path),
+        ROOT / "models" / "feature_cols.joblib",
+    ]
 
 
-def find_missing_artifacts() -> list[Path]:
+REQUIRED_ARTIFACTS = get_required_artifacts()
+
+
+def find_missing_artifacts(model_path: Path | None = None) -> list[Path]:
     """Return any required inference artifacts that are missing from the repo."""
-    return [path for path in REQUIRED_ARTIFACTS if not path.exists()]
+    return [path for path in get_required_artifacts(model_path) if not path.exists()]
 
 
 def main() -> int:
@@ -26,7 +34,7 @@ def main() -> int:
         return 1
 
     print("Runtime artifacts verified:")
-    for path in REQUIRED_ARTIFACTS:
+    for path in get_required_artifacts():
         print(f"  - {path}")
     return 0
 
