@@ -36,6 +36,8 @@ from typing import Union
 MODELS_DIR = Path(__file__).resolve().parent.parent / "models"
 DEFAULT_MODEL_FILENAME = "best_model.joblib"
 FALLBACK_OPTIMAL_THRESHOLD = 0.35
+# Backward-compatible alias used by older validation utilities.
+DEFAULT_DECISION_THRESHOLD = FALLBACK_OPTIMAL_THRESHOLD
 OPTIMAL_THRESHOLD_PATH = MODELS_DIR / "optimal_threshold.json"
 
 
