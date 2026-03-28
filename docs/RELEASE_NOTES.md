@@ -1,5 +1,13 @@
 # Release Notes And Retraining Checklist
 
+## 2026-03-28 - v0.3.2
+
+### Highlights
+
+- added a reviewer checklist for external product, documentation, and safety review
+- added an external feedback log to capture reviewer input and resulting changes
+- added README and contribution guidance for structured feedback collection
+
 ## 2026-03-25 - v0.3.1
 
 ### Highlights

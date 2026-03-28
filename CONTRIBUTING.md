@@ -19,6 +19,17 @@ Good contribution areas include:
 Before starting large work, open an issue or discussion so the direction stays
 aligned with the roadmap.
 
+## External Feedback And Review
+
+Non-code review is useful on this project too. If you are reviewing the live
+demo, documentation, or safety language:
+
+- Use the prompts in `docs/REVIEWER_CHECKLIST.md`
+- Open a GitHub issue with the external feedback template when possible
+- Summarize accepted changes in `docs/EXTERNAL_FEEDBACK.md`
+- Focus on clarity, trustworthiness, and whether the project is understandable
+  in under a minute
+
 ## Local Setup
 
 ```powershell

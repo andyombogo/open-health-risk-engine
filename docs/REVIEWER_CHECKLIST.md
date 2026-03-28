@@ -1,6 +1,6 @@
 # Reviewer Checklist
 
-Use this checklist for one short external review pass. Reviewers should answer
+Use this checklist for a short external review pass. Reviewers should answer
 only the sections relevant to their background.
 
 ## Links To Open
@@ -44,7 +44,7 @@ only the sections relevant to their background.
 
 - Are the non-clinical disclaimers strong enough?
 - Does anything read as too close to a diagnostic or clinical claim?
-- Are the risk labels and threshold explanations responsible?
+- Are the risk labels and interpretation guidance responsible?
 
 ## Final Questions
 

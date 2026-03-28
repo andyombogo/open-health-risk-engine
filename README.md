@@ -57,6 +57,8 @@ The current trained demo model uses **NHANES 2017-March 2020 pre-pandemic data**
 - [Safe-use guidance](docs/SAFE_USE.md)
 - [Release notes](docs/RELEASE_NOTES.md)
 - [Error analysis](docs/ERROR_ANALYSIS.md)
+- [Reviewer checklist](docs/REVIEWER_CHECKLIST.md)
+- [External feedback log](docs/EXTERNAL_FEEDBACK.md)
 - Kaggle notebook draft: `notebooks/open_health_risk_engine_kaggle.ipynb`
 - Phase 4 demo notebook: `notebooks/phase4_nlp_baseline_demo.ipynb`
 - Calibration artifacts: `models/calibrated_summary.csv`, `models/calibrated_threshold_metrics_sigmoid.csv`
@@ -64,6 +66,15 @@ The current trained demo model uses **NHANES 2017-March 2020 pre-pandemic data**
 - [Example scenarios](docs/EXAMPLE_SCENARIOS.md)
 - [Contributing guide](CONTRIBUTING.md)
 - [License](LICENSE)
+
+## External Review Workflow
+
+If you want to review the project without changing code:
+
+1. Open the live app and README.
+2. Use the prompts in [Reviewer checklist](docs/REVIEWER_CHECKLIST.md).
+3. Submit feedback through the GitHub issue template or share notes directly.
+4. Summarize accepted changes in [External feedback log](docs/EXTERNAL_FEEDBACK.md).
 
 ## Demo Assets
 
@@ -93,6 +104,7 @@ open-health-risk-engine/
 |   |-- PHASE4_PLAN.md
 |   |-- REVIEWER_CHECKLIST.md
 |   |-- RELEASE_NOTES.md
+|   |-- REVIEWER_CHECKLIST.md
 |   |-- SAFE_USE.md
 |   |-- VALIDATION_REPORT.md
 |   |-- OpenHealthRiskEngine.postman_collection.json

@@ -6,7 +6,7 @@ labels: feedback
 assignees: ""
 ---
 
-## Reviewer background
+## Reviewer Background
 
 - [ ] Software engineer
 - [ ] Data scientist / ML
@@ -14,7 +14,7 @@ assignees: ""
 - [ ] Product / UX
 - [ ] Other
 
-## Review mode
+## Review Mode
 
 - [ ] README review
 - [ ] Live app review
@@ -22,26 +22,26 @@ assignees: ""
 - [ ] API review
 - [ ] Full walkthrough
 
-## First impression
+## First Impression
 
 Could you understand what the project does in under 60 seconds?
 
-## What felt strong
+## What Felt Strong
 
 What felt credible, clear, or polished?
 
-## What felt confusing or weak
+## What Felt Confusing Or Weak
 
 What was hard to understand, easy to misread, or less convincing?
 
-## Safety and claims
+## Safety And Claims
 
 Did the disclaimers, caveats, and safe-use messaging feel strong enough?
 
-## Highest-impact next improvement
+## Highest-Impact Next Improvement
 
 If you could change one thing in the next week, what would it be?
 
-## Optional links or screenshots
+## Optional Links Or Screenshots
 
 Add screenshots or notes here if helpful.
