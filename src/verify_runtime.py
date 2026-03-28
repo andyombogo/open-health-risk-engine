@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 from pathlib import Path
-
-from src.predict_risk import resolve_model_path
+import sys
 
 ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from src.predict_risk import resolve_model_path
 
 
 def get_required_artifacts(model_path: Path | None = None) -> list[Path]:
